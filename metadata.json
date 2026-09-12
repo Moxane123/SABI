@@ -1,0 +1,6 @@
+{
+  "name": "SABI",
+  "description": "Evidence-based professional identity platform for proving real completed work through documented evidence and client confirmations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
