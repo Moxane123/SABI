@@ -2,13 +2,19 @@
 
 @layer base {
   body {
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     background-color: #FAF8F5;
     color: #16222F;
+    letter-spacing: -0.011em;
   }
 
-  h1, h2, h3, .font-serif {
-    font-family: 'Playfair Display', Georgia, serif;
+  h1, h2, h3, h4, .font-display, .font-serif {
+    font-family: 'Bricolage Grotesque', 'Instrument Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    letter-spacing: -0.025em;
+  }
+
+  code, kbd, samp, pre, .font-mono {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }
 }
 

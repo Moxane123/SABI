@@ -14,7 +14,8 @@ import {
   X,
   Sparkles,
   Check,
-  Clock
+  Clock,
+  FileCheck2
 } from 'lucide-react';
 import {
   UserProfile,
@@ -55,6 +56,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const [bio, setBio] = useState(user?.shortBio || '');
   const [yearsOfExperience, setYearsOfExperience] = useState(user?.yearsOfExperience || 0);
   const [profilePhoto, setProfilePhoto] = useState(user?.profilePhoto || '');
+  const [appearInDiscover, setAppearInDiscover] = useState<boolean>(user?.appearInDiscover === true);
 
   // Skills tag manager
   const [newSkillInput, setNewSkillInput] = useState('');
@@ -74,6 +76,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       skills: [],
       onboardingCompleted: true,
       createdAt: new Date().toISOString(),
+      appearInDiscover: false,
     };
 
     onUpdateProfile({
@@ -84,6 +87,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       shortBio: bio.trim(),
       yearsOfExperience: Number(yearsOfExperience) || 0,
       profilePhoto: profilePhoto.trim(),
+      appearInDiscover,
       onboardingCompleted: true,
     });
     setIsEditing(false);
@@ -183,10 +187,53 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
         {/* Bio */}
         {!isEditing && (
-          <div className="pt-5">
+          <div className="pt-5 space-y-4">
             <p className="text-sm text-stone-600 leading-relaxed max-w-3xl">
               {user?.shortBio || 'No biography added yet.'}
             </p>
+
+            {/* Discover Privacy Status Banner */}
+            <div className="p-4 rounded-xl border border-stone-200 bg-[#F9F8F5] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start sm:items-center gap-3">
+                <div className={`w-3 h-3 rounded-full mt-0.5 sm:mt-0 shrink-0 ${
+                  user?.appearInDiscover ? 'bg-emerald-500 ring-4 ring-emerald-100' : 'bg-stone-300'
+                }`} />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-stone-900">
+                      Discover Status: {user?.appearInDiscover ? 'Listed in SABI Discover' : 'Unlisted (Private Discovery)'}
+                    </span>
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                      user?.appearInDiscover ? 'bg-emerald-100 text-emerald-800' : 'bg-stone-200 text-stone-700'
+                    }`}>
+                      {user?.appearInDiscover ? 'Opted In' : 'Private'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-stone-500 mt-0.5">
+                    {user?.appearInDiscover
+                      ? 'Your public work records and verified deliverables can be found by clients searching SABI Discover.'
+                      : 'You are currently not listed in public search. Only direct link recipients can see your public proof.'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (user) {
+                    const next = !user.appearInDiscover;
+                    onUpdateProfile({ ...user, appearInDiscover: next });
+                    setAppearInDiscover(next);
+                  }
+                }}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 border ${
+                  user?.appearInDiscover
+                    ? 'bg-white border-stone-300 text-stone-700 hover:bg-stone-50'
+                    : 'bg-[#4D7A70] border-[#4D7A70] text-white hover:bg-[#3D665D] shadow-xs'
+                }`}
+              >
+                {user?.appearInDiscover ? 'Switch to Unlisted' : 'Appear in Discover'}
+              </button>
+            </div>
           </div>
         )}
 
@@ -260,6 +307,75 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               />
             </div>
 
+            {/* Discovery Privacy Setting */}
+            <div className="p-4 rounded-xl border border-stone-200 bg-stone-50/80 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="block text-xs font-bold text-stone-900">
+                    Appear in Discover
+                  </label>
+                  <p className="text-[11px] text-stone-500">
+                    Choose whether your documented proof profile is searchable by prospective clients in SABI Discover.
+                  </p>
+                </div>
+                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                  appearInDiscover ? 'bg-emerald-100 text-emerald-800' : 'bg-stone-200 text-stone-700'
+                }`}>
+                  {appearInDiscover ? 'Yes (Opted In)' : 'No (Unlisted)'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setAppearInDiscover(true)}
+                  className={`p-3 rounded-xl border text-left flex items-start gap-2.5 transition-all ${
+                    appearInDiscover
+                      ? 'bg-emerald-50/80 border-emerald-500 text-emerald-950 shadow-2xs'
+                      : 'bg-white border-stone-200 text-stone-700 hover:border-stone-300'
+                  }`}
+                >
+                  <div className={`w-4 h-4 rounded-full border flex items-center justify-center mt-0.5 shrink-0 ${
+                    appearInDiscover ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-stone-300 bg-white'
+                  }`}>
+                    {appearInDiscover && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold block">Yes — Appear in Discover</span>
+                    <span className="text-[11px] text-stone-500 block leading-tight mt-0.5">
+                      Allow clients to search and find your verified public proof.
+                    </span>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAppearInDiscover(false)}
+                  className={`p-3 rounded-xl border text-left flex items-start gap-2.5 transition-all ${
+                    !appearInDiscover
+                      ? 'bg-stone-100 border-stone-500 text-stone-950 shadow-2xs'
+                      : 'bg-white border-stone-200 text-stone-700 hover:border-stone-300'
+                  }`}
+                >
+                  <div className={`w-4 h-4 rounded-full border flex items-center justify-center mt-0.5 shrink-0 ${
+                    !appearInDiscover ? 'border-stone-600 bg-stone-600 text-white' : 'border-stone-300 bg-white'
+                  }`}>
+                    {!appearInDiscover && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold block">No — Keep Unlisted</span>
+                    <span className="text-[11px] text-stone-500 block leading-tight mt-0.5">
+                      Only people with your direct profile link or QR code can view you.
+                    </span>
+                  </div>
+                </button>
+              </div>
+
+              <p className="text-[10px] text-stone-400 italic">
+                * Strict privacy guarantee: Only public work records are ever displayed. Private work records are strictly kept confidential and never exposed.
+              </p>
+            </div>
+
             <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
@@ -320,44 +436,69 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
         {/* Skills grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {skillMetrics.map((sm) => (
-            <div
-              key={sm.name}
-              className={`p-3 rounded-xl border transition-all flex flex-col justify-between ${
-                sm.isProven
-                  ? 'bg-emerald-50/40 border-emerald-200'
-                  : 'bg-stone-50 border-stone-200/80'
-              }`}
-            >
-              <div className="flex items-start justify-between gap-1 mb-1">
-                <span className="font-bold text-xs text-stone-900">{sm.name}</span>
-                {user?.skills?.includes(sm.name) && (
-                  <button
-                    onClick={() => handleRemoveSkill(sm.name)}
-                    className="text-stone-300 hover:text-stone-600 p-0.5"
-                    title="Remove skill"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                )}
-              </div>
+          {skillMetrics.map((sm) => {
+            const isDemonstrated = sm.workRecordsCount > 0;
+            return (
+              <div
+                key={sm.name}
+                className={`p-3 rounded-xl border transition-all flex flex-col justify-between ${
+                  isDemonstrated
+                    ? sm.isProven
+                      ? 'bg-emerald-50/40 border-emerald-200'
+                      : 'bg-stone-50 border-stone-200'
+                    : 'bg-[#FAF8F5] border-stone-200/70 border-dashed'
+                }`}
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-1 mb-1">
+                    <span className="font-bold text-xs text-stone-900">{sm.name}</span>
+                    {user?.skills?.includes(sm.name) && (
+                      <button
+                        onClick={() => handleRemoveSkill(sm.name)}
+                        className="text-stone-300 hover:text-stone-600 p-0.5 cursor-pointer"
+                        title="Remove skill"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
 
-              <div className="pt-2 border-t border-stone-200/40 flex items-center justify-between text-[11px]">
-                {sm.isProven ? (
-                  <span className="text-emerald-800 font-semibold flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>
-                      {sm.confirmedCount > 0
-                        ? `${sm.confirmedCount} confirmed • ${sm.evidenceBackedCount} evidence`
-                        : `${sm.evidenceBackedCount} evidence backed`}
+                  <p className="text-[11px] text-stone-600 mb-2">
+                    {isDemonstrated ? (
+                      <span className="font-semibold text-[#2D4D45]">
+                        Demonstrated in {sm.workRecordsCount} {sm.workRecordsCount === 1 ? 'documented work' : 'documented works'}
+                      </span>
+                    ) : (
+                      <span className="text-stone-400 italic">
+                        Profile Skill (0 documented works yet)
+                      </span>
+                    )}
+                  </p>
+                </div>
+
+                <div className="pt-2 border-t border-stone-200/40 flex items-center justify-between text-[11px]">
+                  {isDemonstrated ? (
+                    <span className="text-emerald-800 font-semibold flex items-center gap-1">
+                      {sm.confirmedCount > 0 ? (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      ) : (
+                        <FileCheck2 className="w-3.5 h-3.5 text-stone-500 shrink-0" />
+                      )}
+                      <span>
+                        {sm.confirmedCount > 0
+                          ? `${sm.confirmedCount} confirmed • ${sm.evidenceBackedCount} evidence`
+                          : sm.evidenceBackedCount > 0
+                          ? `${sm.evidenceBackedCount} evidence backed`
+                          : 'Logged in work ledger'}
+                      </span>
                     </span>
-                  </span>
-                ) : (
-                  <span className="text-stone-400">Claimed • No proof yet</span>
-                )}
+                  ) : (
+                    <span className="text-stone-400">Claimed on profile • Unverified</span>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -384,24 +525,31 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         ) : (
           <div className="relative pl-6 border-l-2 border-stone-200 space-y-6 my-2">
             {sortedRecords.map((rec) => {
-              const isConfirmed = rec.confirmationStatus === 'confirmed';
-              const hasEvidence = rec.evidenceStatus === 'attached' || (rec.evidenceList && rec.evidenceList.length > 0);
+              const status: ProofStatus = getRecordProofStatus(rec);
 
               return (
                 <div key={rec.id} className="relative group">
                   {/* Timeline dot */}
                   <div
                     className={`absolute -left-[31px] top-1 w-4 h-4 rounded-full border-2 bg-white flex items-center justify-center ${
-                      isConfirmed
+                      status === 'Client-confirmed'
                         ? 'border-emerald-500 text-emerald-500'
-                        : hasEvidence
+                        : status === 'Confirmation pending'
                         ? 'border-amber-500 text-amber-500'
+                        : status === 'Evidence-backed'
+                        ? 'border-purple-500 text-purple-500'
                         : 'border-stone-400 text-stone-400'
                     }`}
                   >
                     <div
                       className={`w-1.5 h-1.5 rounded-full ${
-                        isConfirmed ? 'bg-emerald-500' : hasEvidence ? 'bg-amber-500' : 'bg-stone-300'
+                        status === 'Client-confirmed'
+                          ? 'bg-emerald-500'
+                          : status === 'Confirmation pending'
+                          ? 'bg-amber-500'
+                          : status === 'Evidence-backed'
+                          ? 'bg-purple-500'
+                          : 'bg-stone-300'
                       }`}
                     />
                   </div>
@@ -414,9 +562,24 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                       <span className="font-mono text-stone-500 font-semibold">
                         {rec.completionDate}
                       </span>
-                      {isConfirmed && (
+                      {status === 'Client-confirmed' && (
                         <span className="text-[10px] text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full font-semibold border border-emerald-200">
-                          Client Verified
+                          Client-confirmed
+                        </span>
+                      )}
+                      {status === 'Confirmation pending' && (
+                        <span className="text-[10px] text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full font-semibold border border-amber-200">
+                          Confirmation pending
+                        </span>
+                      )}
+                      {status === 'Evidence-backed' && (
+                        <span className="text-[10px] text-purple-800 bg-purple-50 px-2 py-0.5 rounded-full font-semibold border border-purple-200">
+                          Evidence-backed
+                        </span>
+                      )}
+                      {status === 'Self-documented' && (
+                        <span className="text-[10px] text-stone-600 bg-stone-100 px-2 py-0.5 rounded-full font-medium border border-stone-200">
+                          Self-documented
                         </span>
                       )}
                     </div>

@@ -7,7 +7,9 @@ import {
   Sparkles,
   Bell,
   Menu,
-  CheckCircle2
+  CheckCircle2,
+  Compass,
+  MessageSquare,
 } from 'lucide-react';
 import { UserProfile, ActiveTab } from '../types';
 import { SabiLogo } from './SabiLogo';
@@ -22,6 +24,7 @@ interface HeaderProps {
   isPublicMode: boolean;
   setIsPublicMode: (isPublic: boolean) => void;
   onShareProfile: () => void;
+  unreadMessagesCount?: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -34,6 +37,7 @@ export const Header: React.FC<HeaderProps> = ({
   isPublicMode,
   setIsPublicMode,
   onShareProfile,
+  unreadMessagesCount = 0,
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-[#FAF8F5]/90 backdrop-blur-md border-b border-[#EAE6DE] text-[#16222F]">
@@ -83,6 +87,39 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             My Work
+          </button>
+          <button
+            onClick={() => {
+              setIsPublicMode(false);
+              setActiveTab('discover');
+            }}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
+              !isPublicMode && activeTab === 'discover'
+                ? 'bg-[#2D4D45] text-white shadow-2xs'
+                : 'text-[#5A6872] hover:text-[#16222F] hover:bg-[#EAE6DE]/60'
+            }`}
+          >
+            <Compass className="w-3.5 h-3.5 text-[#D4A359]" />
+            <span>Discover</span>
+          </button>
+          <button
+            onClick={() => {
+              setIsPublicMode(false);
+              setActiveTab('messages');
+            }}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 relative ${
+              !isPublicMode && activeTab === 'messages'
+                ? 'bg-[#2D4D45] text-white shadow-2xs'
+                : 'text-[#5A6872] hover:text-[#16222F] hover:bg-[#EAE6DE]/60'
+            }`}
+          >
+            <MessageSquare className="w-3.5 h-3.5" />
+            <span>Messages</span>
+            {unreadMessagesCount > 0 && (
+              <span className="min-w-4 h-4 px-1 rounded-full bg-[#D4A359] text-[#16222F] text-[10px] font-black flex items-center justify-center -ml-0.5">
+                {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
+              </span>
+            )}
           </button>
           <button
             onClick={() => {

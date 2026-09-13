@@ -251,34 +251,54 @@ export const WorkDetailModal: React.FC<WorkDetailModalProps> = ({
               </h1>
 
               {/* Verified Proof Status Badge */}
-              <div>
-                {proofStatus === 'Client confirmed' && (
-                  <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-xs">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    <span>Client confirmed</span>
+              <div className="flex flex-col items-end gap-1">
+                {proofStatus === 'Client-confirmed' && (
+                  <span
+                    title="Meaning: A client or relevant person has independently confirmed the work."
+                    className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-[#EAF3EF] text-[#2D4D45] border border-[#CFE2D9] shadow-2xs"
+                  >
+                    <CheckCircle2 className="w-4 h-4 text-[#4D7A70]" strokeWidth={2.5} />
+                    <span>Client-confirmed</span>
                   </span>
                 )}
 
                 {proofStatus === 'Confirmation pending' && (
-                  <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-300 shadow-xs">
-                    <Clock className="w-4 h-4 text-amber-600" />
+                  <span
+                    title="Meaning: Awaiting independent client confirmation."
+                    className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-[#FDF5EA] text-[#93652E] border border-[#F3DFC3] shadow-2xs"
+                  >
+                    <Clock className="w-4 h-4 text-[#D4A359]" />
                     <span>Confirmation pending</span>
                   </span>
                 )}
 
-                {proofStatus === 'Evidence attached' && (
-                  <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-blue-50 text-blue-900 border border-blue-300 shadow-xs">
-                    <ShieldCheck className="w-4 h-4 text-blue-600" />
-                    <span>Evidence attached</span>
+                {proofStatus === 'Evidence-backed' && (
+                  <span
+                    title="Meaning: Supporting evidence has been attached."
+                    className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-[#F3EFF9] text-[#61507C] border border-[#DDD5EB] shadow-2xs"
+                  >
+                    <ShieldCheck className="w-4 h-4 text-[#8C7CA7]" />
+                    <span>Evidence-backed</span>
                   </span>
                 )}
 
                 {proofStatus === 'Self-documented' && (
-                  <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-stone-100 text-stone-700 border border-stone-200">
-                    <FileText className="w-4 h-4 text-stone-500" />
+                  <span
+                    title="Meaning: Added by the professional."
+                    className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-[#FAF8F5] text-[#7A8690] border border-[#E7E2D8]"
+                  >
+                    <FileText className="w-4 h-4 text-[#A7B1AB]" />
                     <span>Self-documented</span>
                   </span>
                 )}
+
+                {/* Explicit meaning caption */}
+                <span className="text-[10px] text-[#7A8690]">
+                  {proofStatus === 'Client-confirmed' && 'A client or relevant person has independently confirmed the work.'}
+                  {proofStatus === 'Confirmation pending' && 'Confirmation requested and awaiting independent client review.'}
+                  {proofStatus === 'Evidence-backed' && 'Supporting evidence has been attached.'}
+                  {proofStatus === 'Self-documented' && 'Added by the professional.'}
+                </span>
               </div>
             </div>
 
@@ -328,69 +348,93 @@ export const WorkDetailModal: React.FC<WorkDetailModalProps> = ({
                 </h4>
               </div>
 
-              {proofStatus !== 'Client confirmed' && (
+              {proofStatus !== 'Client-confirmed' && (
                 <button
                   onClick={() => onRequestConfirm(work)}
-                  className="inline-flex items-center gap-1 text-xs font-bold text-emerald-800 hover:text-emerald-950 transition-colors"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-[#2D4D45] hover:text-[#1F2421] transition-colors"
                 >
-                  <UserCheck className="w-3.5 h-3.5" />
+                  <UserCheck className="w-3.5 h-3.5 text-[#4D7A70]" />
                   <span>{proofStatus === 'Confirmation pending' ? 'Update Confirmation' : 'Request Confirmation'}</span>
                 </button>
               )}
             </div>
 
             {/* Confirmed State with Testimonial */}
-            {proofStatus === 'Client confirmed' && confirmation && (
-              <div className="bg-white p-4 rounded-xl border border-emerald-200 shadow-xs space-y-2.5">
+            {proofStatus === 'Client-confirmed' && confirmation && (
+              <div className="bg-white p-4 rounded-xl border border-[#CFE2D9] shadow-2xs space-y-2.5">
                 <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1.5 font-bold text-emerald-950">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    <span>Verified by {confirmation.clientName}</span>
+                  <div className="flex items-center gap-1.5 font-bold text-[#2D4D45]">
+                    <CheckCircle2 className="w-4 h-4 text-[#4D7A70]" />
+                    <span>Confirmed by {confirmation.clientName}</span>
                     {confirmation.clientRole && (
-                      <span className="font-normal text-stone-500">
+                      <span className="font-normal text-[#7A8690]">
                         • {confirmation.clientRole}
                       </span>
                     )}
                   </div>
                   {confirmation.confirmedAt && (
-                    <span className="text-[11px] text-stone-400">
+                    <span className="text-[11px] text-[#7A8690]">
                       Confirmed on {new Date(confirmation.confirmedAt).toLocaleDateString()}
                     </span>
                   )}
                 </div>
 
                 {confirmation.testimonial ? (
-                  <div className="bg-emerald-50/50 p-3.5 rounded-xl border border-emerald-100 text-stone-800 text-xs sm:text-sm italic leading-relaxed">
+                  <div className="bg-[#FAF8F5] p-3.5 rounded-xl border border-[#E7E2D8] text-[#1F2421] text-xs sm:text-sm italic leading-relaxed">
                     “{confirmation.testimonial}”
                   </div>
                 ) : (
-                  <p className="text-xs text-stone-600">
+                  <p className="text-xs text-[#52606D]">
                     The client has formally verified that this work deliverable was completed as described.
                   </p>
                 )}
               </div>
             )}
 
+            {/* Declined State */}
+            {confirmation?.status === 'declined' && (
+              <div className="bg-[#FFFDF9] p-4 rounded-xl border border-[#F3DFC3] text-xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-[#93652E]">
+                    Client was unable to confirm this deliverable
+                  </span>
+                  {confirmation.declinedAt && (
+                    <span className="text-[10px] text-[#7A8690]">
+                      {new Date(confirmation.declinedAt).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+                {confirmation.declinedReason && (
+                  <p className="text-[#52606D] italic">
+                    Reason: “{confirmation.declinedReason}”
+                  </p>
+                )}
+                <p className="text-[#7A8690]">
+                  You can update the deliverable details or request confirmation from another client or supervisor.
+                </p>
+              </div>
+            )}
+
             {/* Pending State with Copyable Link */}
             {proofStatus === 'Confirmation pending' && confirmation && (
-              <div className="bg-white p-4 rounded-xl border border-amber-200 shadow-xs space-y-3">
+              <div className="bg-white p-4 rounded-xl border border-[#F3DFC3] shadow-2xs space-y-3">
                 <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1.5 font-bold text-amber-900">
-                    <Clock className="w-4 h-4 text-amber-600" />
+                  <div className="flex items-center gap-1.5 font-bold text-[#93652E]">
+                    <Clock className="w-4 h-4 text-[#D4A359]" />
                     <span>Awaiting confirmation from {confirmation.clientName}</span>
                   </div>
-                  <span className="text-[10px] uppercase font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded">
+                  <span className="text-[10px] uppercase font-bold text-[#93652E] bg-[#FDF5EA] px-2 py-0.5 rounded border border-[#F3DFC3]">
                     Link Active
                   </span>
                 </div>
 
                 {confirmation.note && (
-                  <p className="text-xs text-stone-600 italic bg-amber-50/50 p-2.5 rounded-lg border border-amber-100">
+                  <p className="text-xs text-[#52606D] italic bg-[#FAF8F5] p-2.5 rounded-lg border border-[#E7E2D8]">
                     Note sent: “{confirmation.note}”
                   </p>
                 )}
 
-                <p className="text-xs text-stone-600">
+                <p className="text-xs text-[#52606D]">
                   Share this dedicated review link with your client. They can review your deliverables and submit their verification with one click:
                 </p>
 
@@ -399,13 +443,13 @@ export const WorkDetailModal: React.FC<WorkDetailModalProps> = ({
                     type="text"
                     readOnly
                     value={confirmationUrl}
-                    className="flex-1 text-xs font-mono bg-stone-50 border border-stone-300 px-3 py-2 rounded-lg text-stone-700 truncate"
+                    className="flex-1 text-xs font-mono bg-[#FAF8F5] border border-[#D5CFC2] px-3 py-2 rounded-lg text-[#1F2421] truncate"
                   />
                   <button
                     onClick={handleCopyConfirmationLink}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-stone-900 text-stone-100 text-xs font-bold rounded-lg hover:bg-stone-800 transition-colors shrink-0"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#1F2421] text-[#FAF8F5] text-xs font-bold rounded-lg hover:bg-[#2D3530] transition-colors shrink-0"
                   >
-                    {copiedToken ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedToken ? <Check className="w-3.5 h-3.5 text-[#4D7A70]" /> : <Copy className="w-3.5 h-3.5" />}
                     <span>{copiedToken ? 'Copied' : 'Copy Link'}</span>
                   </button>
 
@@ -413,7 +457,7 @@ export const WorkDetailModal: React.FC<WorkDetailModalProps> = ({
                     href={confirmationUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="p-2 text-stone-600 hover:text-stone-950 border border-stone-300 rounded-lg hover:bg-stone-100 transition-colors shrink-0"
+                    className="p-2 text-[#52606D] hover:text-[#1F2421] border border-[#D5CFC2] rounded-lg hover:bg-[#FAF8F5] transition-colors shrink-0"
                     title="Open confirmation review portal"
                   >
                     <ExternalLink className="w-4 h-4" />
@@ -423,16 +467,16 @@ export const WorkDetailModal: React.FC<WorkDetailModalProps> = ({
             )}
 
             {/* Unconfirmed State */}
-            {proofStatus !== 'Client confirmed' && proofStatus !== 'Confirmation pending' && (
-              <div className="bg-white p-3.5 rounded-xl border border-stone-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                <p className="text-stone-600">
+            {proofStatus !== 'Client-confirmed' && proofStatus !== 'Confirmation pending' && confirmation?.status !== 'declined' && (
+              <div className="bg-white p-3.5 rounded-xl border border-[#E7E2D8] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <p className="text-[#52606D]">
                   {work.clientName
-                    ? `Client listed as ${work.clientName}. Generate a one-click verification link to confirm this deliverable.`
-                    : 'Request confirmation from your client or commissioning supervisor to upgrade this to "Client confirmed".'}
+                    ? `Client listed as ${work.clientName}. Generate a secure link to independently confirm this deliverable.`
+                    : 'Request confirmation from your client or commissioning supervisor to upgrade this to "Client-confirmed".'}
                 </p>
                 <button
                   onClick={() => onRequestConfirm(work)}
-                  className="px-3 py-1.5 bg-emerald-700 text-white rounded-lg text-xs font-bold hover:bg-emerald-600 transition-colors shrink-0"
+                  className="px-3.5 py-2 bg-[#4D7A70] text-[#FAF8F5] rounded-xl text-xs font-bold hover:bg-[#3D635B] transition-colors shrink-0 cursor-pointer shadow-2xs"
                 >
                   Request Client Sign-off
                 </button>

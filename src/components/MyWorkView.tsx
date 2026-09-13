@@ -130,9 +130,9 @@ export const MyWorkView: React.FC<MyWorkViewProps> = ({
 
     records.forEach((r) => {
       const status = getRecordProofStatus(r);
-      if (status === 'Client confirmed') clientConfirmedCount++;
+      if (status === 'Client-confirmed') clientConfirmedCount++;
       else if (status === 'Confirmation pending') confirmationPendingCount++;
-      else if (status === 'Evidence attached') evidenceAttachedCount++;
+      else if (status === 'Evidence-backed') evidenceAttachedCount++;
       else selfDocumentedCount++;
     });
 
@@ -258,9 +258,9 @@ export const MyWorkView: React.FC<MyWorkViewProps> = ({
               className="w-full px-3 py-1.5 text-xs rounded-lg border border-stone-300 bg-white text-stone-800 focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
             >
               <option value="all">All Statuses ({records.length})</option>
-              <option value="Client confirmed">Client confirmed ({stats.clientConfirmedCount})</option>
+              <option value="Client-confirmed">Client-confirmed ({stats.clientConfirmedCount})</option>
               <option value="Confirmation pending">Confirmation pending ({stats.confirmationPendingCount})</option>
-              <option value="Evidence attached">Evidence attached ({stats.evidenceAttachedCount})</option>
+              <option value="Evidence-backed">Evidence-backed ({stats.evidenceAttachedCount})</option>
               <option value="Self-documented">Self-documented ({stats.selfDocumentedCount})</option>
             </select>
           </div>
@@ -412,30 +412,30 @@ export const MyWorkView: React.FC<MyWorkViewProps> = ({
                       </span>
                     )}
 
-                    {proofStatus === 'Client confirmed' && (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Client confirmed</span>
+                    {proofStatus === 'Client-confirmed' && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#EAF3EF] text-[#2D4D45] border border-[#CFE2D9]">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#4D7A70]" strokeWidth={2.5} />
+                        <span>Client-confirmed</span>
                       </span>
                     )}
 
                     {proofStatus === 'Confirmation pending' && (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-300">
-                        <Clock className="w-3.5 h-3.5 text-amber-600" />
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#FDF5EA] text-[#93652E] border border-[#F3DFC3]">
+                        <Clock className="w-3.5 h-3.5 text-[#D4A359]" />
                         <span>Confirmation pending</span>
                       </span>
                     )}
 
-                    {proofStatus === 'Evidence attached' && (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-900 border border-blue-300">
-                        <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-                        <span>Evidence attached</span>
+                    {proofStatus === 'Evidence-backed' && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#F3EFF9] text-[#61507C] border border-[#DDD5EB]">
+                        <ShieldCheck className="w-3.5 h-3.5 text-[#8C7CA7]" />
+                        <span>Evidence-backed</span>
                       </span>
                     )}
 
                     {proofStatus === 'Self-documented' && (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-700 border border-stone-200">
-                        <FileText className="w-3.5 h-3.5 text-stone-500" />
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-[#FAF8F5] text-[#7A8690] border border-[#E7E2D8]">
+                        <FileText className="w-3.5 h-3.5 text-[#A7B1AB]" />
                         <span>Self-documented</span>
                       </span>
                     )}
@@ -457,7 +457,7 @@ export const MyWorkView: React.FC<MyWorkViewProps> = ({
                 </div>
 
                 {/* Testimonial Quote if Confirmed */}
-                {proofStatus === 'Client confirmed' && confirmation?.testimonial && (
+                {proofStatus === 'Client-confirmed' && confirmation?.testimonial && (
                   <div className="p-3 bg-emerald-50/70 border border-emerald-200/70 rounded-xl text-xs text-stone-800 italic">
                     “{confirmation.testimonial}”
                     <span className="block mt-1 font-semibold text-emerald-950 not-italic text-[11px]">
@@ -533,7 +533,7 @@ export const MyWorkView: React.FC<MyWorkViewProps> = ({
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {proofStatus !== 'Client confirmed' && (
+                    {proofStatus !== 'Client-confirmed' && (
                       <button
                         onClick={() => onRequestConfirm(record)}
                         className="px-2.5 py-1.5 text-emerald-800 hover:text-emerald-950 text-xs font-semibold rounded-lg hover:bg-emerald-50 transition-colors flex items-center gap-1"

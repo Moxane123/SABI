@@ -6,7 +6,10 @@ import {
   MapPin,
   FileCheck2,
   Check,
-  Award,
+  XCircle,
+  AlertCircle,
+  ExternalLink,
+  MessageSquare,
   ArrowRight
 } from 'lucide-react';
 import { ClientConfirmation, WorkRecord, UserProfile } from '../types';
@@ -28,19 +31,25 @@ export const ClientConfirmView: React.FC<ClientConfirmViewProps> = ({
   onReturnToApp,
 }) => {
   const { confirmation, work, user } = confirmationData;
-  const isAlreadyConfirmed = confirmation.status === 'confirmed';
 
+  const isAlreadyConfirmed = confirmation.status === 'confirmed';
+  const isAlreadyDeclined = confirmation.status === 'declined';
+
+  const [activeAction, setActiveAction] = useState<'confirm' | 'decline'>('confirm');
   const [clientName, setClientName] = useState(confirmation.clientName || '');
   const [clientRole, setClientRole] = useState(confirmation.clientRole || '');
   const [testimonial, setTestimonial] = useState(confirmation.testimonial || '');
+  const [declineReason, setDeclineReason] = useState(confirmation.declinedReason || '');
   const [agreed, setAgreed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [success, setSuccess] = useState(isAlreadyConfirmed);
+  const [statusResult, setStatusResult] = useState<'idle' | 'confirmed' | 'declined'>(
+    isAlreadyConfirmed ? 'confirmed' : isAlreadyDeclined ? 'declined' : 'idle'
+  );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleConfirmSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!agreed) {
-      alert('Please confirm the verification checkbox.');
+      alert('Please check the confirmation box to confirm this work.');
       return;
     }
 
@@ -52,229 +61,425 @@ export const ClientConfirmView: React.FC<ClientConfirmViewProps> = ({
       clientRole.trim() || undefined
     );
 
+    setIsSubmitting(false);
     if (confirmed) {
-      setSuccess(true);
+      setStatusResult('confirmed');
       onConfirmationComplete();
     } else {
-      alert('Failed to submit confirmation. Please try again.');
+      alert('Unable to submit confirmation. Please refresh and try again.');
     }
+  };
+
+  const handleDeclineSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    const declined = db.declineWorkRecord(
+      confirmation.token,
+      clientName.trim() || undefined,
+      declineReason.trim() || undefined
+    );
+
     setIsSubmitting(false);
+    if (declined) {
+      setStatusResult('declined');
+      onConfirmationComplete();
+    } else {
+      alert('Unable to process response. Please try again.');
+    }
   };
 
   const evidence = work.evidenceList || db.getEvidenceByWorkId(work.id);
 
   return (
-    <div className="min-h-screen bg-stone-100 flex items-center justify-center p-4 sm:p-6 text-stone-900">
-      <div className="max-w-xl w-full bg-white rounded-3xl border border-stone-200 shadow-xl overflow-hidden">
-        {/* Top Header */}
-        <div className="bg-stone-900 p-6 text-stone-100 border-b border-stone-800">
-          <div className="flex items-center justify-between mb-3">
+    <div className="min-h-screen bg-[#FAF8F5] flex flex-col justify-between text-[#1F2421]">
+      {/* Brand Navigation Bar */}
+      <header className="w-full bg-[#1F2421] border-b border-[#2D3530] px-4 sm:px-8 py-3.5 flex items-center justify-between sticky top-0 z-20">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-[#D4A359] text-[#1F2421] font-black flex items-center justify-center text-base tracking-wider shadow-sm">
+            S
+          </div>
+          <div>
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-amber-500 text-stone-950 font-black flex items-center justify-center text-sm">
-                S
-              </div>
-              <span className="font-bold text-sm tracking-tight text-white">SABI</span>
-              <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-stone-800 text-amber-400 border border-stone-700">
-                Client Verification Portal
+              <span className="font-bold text-sm tracking-tight text-[#FAF8F5]">SABI</span>
+              <span className="text-[10px] tracking-wide uppercase font-semibold px-2 py-0.5 rounded bg-[#2D3530] text-[#D4A359] border border-[#3A453F]">
+                Work Confirmation
               </span>
             </div>
-            <button
-              onClick={onReturnToApp}
-              className="text-xs text-stone-400 hover:text-white"
-            >
-              Back to SABI
-            </button>
           </div>
-
-          <h1 className="text-xl sm:text-2xl font-bold text-white">
-            Client Proof Verification
-          </h1>
-          <p className="text-xs sm:text-sm text-stone-400 mt-1">
-            You were requested by <strong className="text-amber-400">{user.fullName}</strong> to verify completed work for their professional proof profile.
-          </p>
         </div>
 
-        {/* Success Screen */}
-        {success ? (
-          <div className="p-8 text-center space-y-4">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto shadow-sm">
-              <CheckCircle2 className="w-8 h-8" />
-            </div>
+        <button
+          onClick={onReturnToApp}
+          className="text-xs text-[#A7B1AB] hover:text-white transition-colors"
+        >
+          View Public Profile
+        </button>
+      </header>
 
-            <div>
-              <h2 className="text-xl font-extrabold text-stone-900">
-                Verification Recorded!
-              </h2>
-              <p className="text-xs sm:text-sm text-stone-600 mt-1 max-w-md mx-auto">
-                Thank you! Your confirmation and testimonial have been cryptographically linked to <strong>{user.fullName}</strong>’s portable proof profile.
-              </p>
-            </div>
-
-            <div className="bg-emerald-50/60 p-4 rounded-xl border border-emerald-200/70 text-left text-xs space-y-1.5 max-w-md mx-auto">
-              <p className="font-semibold text-emerald-950">
-                Verified Job: {work.title}
-              </p>
-              <p className="text-emerald-800">
-                Confirmed by: {clientName || confirmation.clientName}
-                {clientRole ? ` (${clientRole})` : ''}
-              </p>
-              {testimonial && (
-                <p className="italic text-stone-700 pt-1 border-t border-emerald-200/40">
-                  “{testimonial}”
+      {/* Main Content Area */}
+      <main className="flex-1 flex items-center justify-center p-4 sm:p-6 md:p-8">
+        <div className="max-w-xl w-full bg-white rounded-3xl border border-[#E7E2D8] shadow-sm overflow-hidden">
+          {/* Header Banner */}
+          <div className="bg-[#FAF8F5] p-5 sm:p-6 border-b border-[#E7E2D8]">
+            <div className="flex items-center gap-3.5">
+              <img
+                src={user.profilePhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200'}
+                alt={user.fullName}
+                className="w-12 h-12 rounded-2xl object-cover border border-[#D5CFC2] shadow-xs"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-[#7A8690]">
+                  Confirmation Request from
                 </p>
-              )}
-            </div>
-
-            <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <button
-                onClick={onReturnToApp}
-                className="w-full sm:w-auto px-5 py-2.5 bg-stone-900 hover:bg-stone-800 text-stone-100 text-xs font-bold rounded-xl transition-colors"
-              >
-                View {user.fullName}’s Proof Profile
-              </button>
+                <h1 className="text-base sm:text-lg font-bold text-[#1F2421] truncate">
+                  {user.fullName}
+                </h1>
+                <p className="text-xs text-[#52606D] truncate">
+                  {user.profession} {user.location ? `• ${user.location}` : ''}
+                </p>
+              </div>
             </div>
           </div>
-        ) : (
-          /* Confirmation Form */
-          <div className="p-6 space-y-6">
-            {/* Work Record Deliverable Summary */}
-            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-2.5">
-              <div className="flex items-center justify-between text-xs text-stone-500">
-                <span className="font-semibold uppercase tracking-wider text-stone-700">
-                  {work.category}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5" />
-                  {work.completionDate}
-                </span>
-              </div>
 
-              <h3 className="text-base font-bold text-stone-900">
-                {work.title}
-              </h3>
-
-              <p className="text-xs text-stone-700 leading-relaxed whitespace-pre-line">
-                {work.description}
-              </p>
-
-              {confirmation.note && (
-                <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-xl text-xs text-amber-950">
-                  <p className="font-semibold text-amber-900 mb-0.5">Note from {user.fullName}:</p>
-                  <p className="italic">“{confirmation.note}”</p>
-                </div>
-              )}
-
-              {/* Skills */}
-              <div className="flex flex-wrap gap-1 pt-1">
-                {work.skillsDemonstrated.map((sk, i) => (
-                  <span
-                    key={i}
-                    className="text-[11px] px-2 py-0.5 rounded bg-white text-stone-700 border border-stone-200"
-                  >
-                    {sk}
-                  </span>
-                ))}
-              </div>
-
-              {/* Evidence preview */}
-              {evidence.length > 0 && (
-                <div className="pt-2 border-t border-stone-200/60">
-                  <p className="text-[11px] font-semibold text-stone-500 mb-1.5">
-                    Attached Evidence ({evidence.length}):
-                  </p>
-                  <div className="flex gap-2 overflow-x-auto pb-1">
-                    {evidence.map((ev) => (
-                      <div
-                        key={ev.id}
-                        className="w-14 h-14 rounded-lg border border-stone-300 overflow-hidden shrink-0 bg-stone-100 flex items-center justify-center text-xs"
-                      >
-                        {ev.type === 'image' ? (
-                          <img src={ev.url} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          <FileCheck2 className="w-5 h-5 text-stone-500" />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Verification Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-stone-900 flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                <span>Your Verification & Feedback</span>
-              </h4>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    Your Full Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={clientName}
-                    onChange={(e) => setClientName(e.target.value)}
-                    placeholder="e.g. Marcus Cole"
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-stone-300"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    Your Role / Relationship
-                  </label>
-                  <input
-                    type="text"
-                    value={clientRole}
-                    onChange={(e) => setClientRole(e.target.value)}
-                    placeholder="e.g. Client, Managing Director, General Contractor"
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-stone-300"
-                  />
-                </div>
+          {/* STATE 1: Already Confirmed or Just Confirmed */}
+          {statusResult === 'confirmed' ? (
+            <div className="p-6 sm:p-8 text-center space-y-5">
+              <div className="w-16 h-16 rounded-2xl bg-[#EAF3EF] text-[#2D4D45] flex items-center justify-center mx-auto border border-[#CFE2D9] shadow-xs">
+                <CheckCircle2 className="w-8 h-8" />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">
-                  Client Testimonial & Notes
-                </label>
-                <textarea
-                  rows={3}
-                  value={testimonial}
-                  onChange={(e) => setTestimonial(e.target.value)}
-                  placeholder="Share details regarding the quality of work, adherence to deadlines, craftsmanship, or outcome..."
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-stone-300"
-                />
+                <span className="text-[11px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#EAF3EF] text-[#2D4D45] border border-[#CFE2D9]">
+                  Client Confirmed
+                </span>
+                <h2 className="text-xl font-bold text-[#1F2421] mt-3">
+                  Work Record Confirmed
+                </h2>
+                <p className="text-xs sm:text-sm text-[#52606D] mt-1.5 max-w-md mx-auto leading-relaxed">
+                  Thank you! Your independent confirmation has been permanently attached to <strong>{user.fullName}</strong>'s proof record.
+                </p>
               </div>
 
-              {/* Checkbox agreement */}
-              <label className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50/70 border border-amber-200 cursor-pointer">
-                <input
-                  type="checkbox"
-                  required
-                  checked={agreed}
-                  onChange={(e) => setAgreed(e.target.checked)}
-                  className="w-4 h-4 text-amber-600 rounded border-stone-300 mt-0.5"
-                />
-                <span className="text-xs text-stone-800 leading-snug">
-                  I confirm that <strong>{user.fullName}</strong> completed this deliverable as described, and I approve adding this confirmation to their verified work history.
-                </span>
-              </label>
+              <div className="bg-[#FAF8F5] p-4 rounded-2xl border border-[#E7E2D8] text-left text-xs space-y-2 max-w-md mx-auto">
+                <div>
+                  <span className="text-[10px] font-semibold text-[#7A8690] uppercase tracking-wider block">
+                    Confirmed Deliverable
+                  </span>
+                  <p className="font-bold text-[#1F2421] text-sm">{work.title}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[#E7E2D8]">
+                  <div>
+                    <span className="text-[10px] text-[#7A8690] block">Confirmed by</span>
+                    <span className="font-semibold text-[#1F2421]">
+                      {clientName || confirmation.clientName || 'Independent Client'}
+                      {clientRole ? ` (${clientRole})` : ''}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-[#7A8690] block">Completion Date</span>
+                    <span className="font-semibold text-[#1F2421]">
+                      {work.completionDate || 'Recorded on file'}
+                    </span>
+                  </div>
+                </div>
 
-              <button
-                type="submit"
-                disabled={isSubmitting || !agreed}
-                className="w-full py-3 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow transition-colors flex items-center justify-center gap-2"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Confirm & Sign Proof Record</span>
-              </button>
-            </form>
-          </div>
-        )}
-      </div>
+                {testimonial && (
+                  <div className="pt-2 border-t border-[#E7E2D8]">
+                    <span className="text-[10px] text-[#7A8690] block mb-1">Your Testimonial</span>
+                    <p className="italic text-[#2D3530] bg-white p-3 rounded-xl border border-[#E7E2D8]">
+                      “{testimonial}”
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-3">
+                <button
+                  onClick={onReturnToApp}
+                  className="w-full sm:w-auto px-6 py-2.5 bg-[#1F2421] hover:bg-[#2D3530] text-[#FAF8F5] text-xs font-bold rounded-xl transition-colors inline-flex items-center justify-center gap-2"
+                >
+                  <span>View Verified Profile</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          ) : statusResult === 'declined' ? (
+            /* STATE 2: Declined */
+            <div className="p-6 sm:p-8 text-center space-y-5">
+              <div className="w-16 h-16 rounded-2xl bg-[#FDF5EA] text-[#93652E] flex items-center justify-center mx-auto border border-[#F3DFC3] shadow-xs">
+                <AlertCircle className="w-8 h-8" />
+              </div>
+
+              <div>
+                <h2 className="text-xl font-bold text-[#1F2421]">
+                  Response Recorded
+                </h2>
+                <p className="text-xs sm:text-sm text-[#52606D] mt-1.5 max-w-md mx-auto leading-relaxed">
+                  Thank you for your response. We have recorded that this work deliverable could not be confirmed.
+                </p>
+              </div>
+
+              <div className="bg-[#FAF8F5] p-4 rounded-2xl border border-[#E7E2D8] text-left text-xs max-w-md mx-auto text-[#52606D]">
+                <p>
+                  SABI relies on genuine client confirmations to guarantee transparency and trust. The record will remain self-documented or evidence-backed rather than client-confirmed.
+                </p>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  onClick={onReturnToApp}
+                  className="px-5 py-2.5 bg-[#1F2421] text-[#FAF8F5] text-xs font-bold rounded-xl"
+                >
+                  Back to SABI
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* STATE 3: Active Confirmation Flow */
+            <div className="p-5 sm:p-7 space-y-6">
+              {/* Work Details Document Card */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-[#FAF8F5] border border-[#E7E2D8] space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold uppercase tracking-wider text-[#4D7A70] text-[11px]">
+                    {work.category}
+                  </span>
+                  {work.completionDate && (
+                    <span className="flex items-center gap-1 text-[#7A8690] text-[11px] font-medium">
+                      <Calendar className="w-3.5 h-3.5 text-[#A7B1AB]" />
+                      Completed: {work.completionDate}
+                    </span>
+                  )}
+                </div>
+
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-[#1F2421] leading-snug">
+                    {work.title}
+                  </h3>
+                  <p className="text-xs text-[#4A5560] leading-relaxed whitespace-pre-line mt-1.5">
+                    {work.description}
+                  </p>
+                </div>
+
+                {/* Optional Creator Note */}
+                {confirmation.note && (
+                  <div className="p-3 bg-[#FFFDF9] border border-[#F3DFC3] rounded-xl text-xs text-[#93652E]">
+                    <span className="font-bold block mb-0.5 text-[#93652E]">
+                      Note from {user.fullName}:
+                    </span>
+                    <p className="italic">“{confirmation.note}”</p>
+                  </div>
+                )}
+
+                {/* Skills Demonstrated */}
+                {work.skillsDemonstrated && work.skillsDemonstrated.length > 0 && (
+                  <div className="pt-2 border-t border-[#E7E2D8]">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-[#7A8690] block mb-1.5">
+                      Skills Demonstrated
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {work.skillsDemonstrated.map((sk, i) => (
+                        <span
+                          key={i}
+                          className="text-[11px] px-2.5 py-0.5 rounded-md bg-white text-[#2D3530] border border-[#DDD7CD] font-medium"
+                        >
+                          {sk}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Evidence items preview if present */}
+                {evidence.length > 0 && (
+                  <div className="pt-2 border-t border-[#E7E2D8]">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-[#7A8690] block mb-1.5">
+                      Attached Evidence ({evidence.length})
+                    </span>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {evidence.map((ev) => (
+                        <div
+                          key={ev.id}
+                          className="p-2 rounded-xl bg-white border border-[#E7E2D8] flex items-center gap-2 overflow-hidden"
+                        >
+                          {ev.type === 'image' ? (
+                            <img
+                              src={ev.url}
+                              alt=""
+                              className="w-9 h-9 rounded-lg object-cover shrink-0 border border-[#E7E2D8]"
+                            />
+                          ) : (
+                            <div className="w-9 h-9 rounded-lg bg-[#FAF8F5] border border-[#E7E2D8] flex items-center justify-center shrink-0">
+                              <FileCheck2 className="w-4 h-4 text-[#4D7A70]" />
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[11px] font-semibold text-[#1F2421] truncate">
+                              {ev.caption || ev.fileName || ev.type}
+                            </p>
+                            <span className="text-[9px] uppercase tracking-wider text-[#7A8690]">
+                              {ev.type}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* The Core Question */}
+              <div className="p-4 rounded-2xl bg-[#EAF3EF]/70 border border-[#CFE2D9] text-center">
+                <p className="text-xs sm:text-sm font-semibold text-[#2D4D45]">
+                  Was this work completed for you, or can you confirm this deliverable was finished as described?
+                </p>
+              </div>
+
+              {/* Choice Action Selector */}
+              <div className="grid grid-cols-2 gap-2 p-1 bg-[#FAF8F5] rounded-2xl border border-[#E7E2D8]">
+                <button
+                  type="button"
+                  onClick={() => setActiveAction('confirm')}
+                  className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                    activeAction === 'confirm'
+                      ? 'bg-white text-[#2D4D45] shadow-xs border border-[#CFE2D9]'
+                      : 'text-[#7A8690] hover:text-[#1F2421]'
+                  }`}
+                >
+                  <Check className="w-4 h-4 text-[#4D7A70]" />
+                  <span>Confirm Work</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveAction('decline')}
+                  className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                    activeAction === 'decline'
+                      ? 'bg-white text-[#93652E] shadow-xs border border-[#F3DFC3]'
+                      : 'text-[#7A8690] hover:text-[#1F2421]'
+                  }`}
+                >
+                  <XCircle className="w-4 h-4 text-[#D4A359]" />
+                  <span>Decline / Cannot Confirm</span>
+                </button>
+              </div>
+
+              {/* FORM: Confirm Work */}
+              {activeAction === 'confirm' && (
+                <form onSubmit={handleConfirmSubmit} className="space-y-4 pt-1">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1F2421] mb-1">
+                      Your Full Name <span className="text-[#C84B31]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={clientName}
+                      onChange={(e) => setClientName(e.target.value)}
+                      placeholder="e.g. Sarah Jenkins"
+                      className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-[#D5CFC2] focus:outline-hidden focus:border-[#4D7A70] bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1F2421] mb-1">
+                      Your Relationship / Role (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={clientRole}
+                      onChange={(e) => setClientRole(e.target.value)}
+                      placeholder="e.g. Client, Property Owner, Project Manager"
+                      className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-[#D5CFC2] focus:outline-hidden focus:border-[#4D7A70] bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1F2421] mb-1">
+                      Testimonial or Brief Remarks (Optional)
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={testimonial}
+                      onChange={(e) => setTestimonial(e.target.value)}
+                      placeholder="Share brief remarks on delivery quality, timeliness, craftsmanship, or your overall experience..."
+                      className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-[#D5CFC2] focus:outline-hidden focus:border-[#4D7A70] bg-white"
+                    />
+                  </div>
+
+                  {/* Trust Agreement Checkbox */}
+                  <label className="flex items-start gap-3 p-3.5 rounded-xl bg-[#FAF8F5] border border-[#E7E2D8] cursor-pointer hover:bg-white transition-colors">
+                    <input
+                      type="checkbox"
+                      required
+                      checked={agreed}
+                      onChange={(e) => setAgreed(e.target.checked)}
+                      className="w-4 h-4 text-[#4D7A70] rounded border-[#D5CFC2] mt-0.5 focus:ring-[#4D7A70]"
+                    />
+                    <span className="text-xs text-[#2D3530] leading-snug">
+                      I confirm that <strong>{user.fullName}</strong> completed this deliverable as described, and I approve adding this confirmation to their professional proof record.
+                    </span>
+                  </label>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || !agreed}
+                    className="w-full py-3.5 bg-[#4D7A70] hover:bg-[#3D635B] disabled:opacity-40 text-[#FAF8F5] font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Confirm & Sign Proof Record</span>
+                  </button>
+                </form>
+              )}
+
+              {/* FORM: Decline Work */}
+              {activeAction === 'decline' && (
+                <form onSubmit={handleDeclineSubmit} className="space-y-4 pt-1">
+                  <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#E7E2D8] text-xs text-[#52606D] leading-relaxed">
+                    If you are not the person who received or supervised this work, or if the deliverable was not completed as described, please decline. This helps keep SABI records honest and verifiable.
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1F2421] mb-1">
+                      Reason for Declining (Optional)
+                    </label>
+                    <select
+                      value={declineReason}
+                      onChange={(e) => setDeclineReason(e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-[#D5CFC2] focus:outline-hidden focus:border-[#4D7A70] bg-white"
+                    >
+                      <option value="">Select a reason...</option>
+                      <option value="I am not the client for this deliverable">
+                        I am not the client for this deliverable
+                      </option>
+                      <option value="The work was not completed as described">
+                        The work was not completed as described
+                      </option>
+                      <option value="Work details or dates are inaccurate">
+                        Work details or dates are inaccurate
+                      </option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full py-3 bg-[#FAF8F5] hover:bg-[#F3EFE6] text-[#93652E] border border-[#F3DFC3] font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <XCircle className="w-4 h-4 text-[#D4A359]" />
+                    <span>Submit Decline</span>
+                  </button>
+                </form>
+              )}
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="py-4 text-center text-xs text-[#7A8690] border-t border-[#E7E2D8] bg-white">
+        <p>SABI • Independent Proof & Verification Ledger</p>
+      </footer>
     </div>
   );
 };

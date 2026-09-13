@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, User, Mail, Sparkles, ArrowRight } from 'lucide-react';
+import { X, User, Mail, ArrowRight, Loader2 } from 'lucide-react';
 import { auth } from '../services/auth';
 import { UserProfile } from '../types';
 import { SabiLogo } from './SabiLogo';
@@ -8,25 +8,46 @@ interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLoginSuccess: (user: UserProfile, isNewSignup?: boolean) => void;
+  customTitle?: string;
+  customSubtitle?: string;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
   onClose,
   onLoginSuccess,
+  customTitle,
+  customSubtitle,
 }) => {
   if (!isOpen) return null;
 
   const [mode, setMode] = useState<'signup' | 'login'>('signup');
   const [error, setError] = useState<string | null>(null);
+  const [isGoogleLoading, setIsGoogleLoading] = useState<boolean>(false);
 
-  // Sign up minimal fields (the rest is handled in the 4-step onboarding flow)
+  // Sign up minimal fields
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
 
   // Login field
   const [loginIdentifier, setLoginIdentifier] = useState('');
+
+  // Standard "Continue with Google" via Firebase Managed Authentication
+  const handleGoogleSignIn = async () => {
+    setError(null);
+    setIsGoogleLoading(true);
+    try {
+      const { user, isNewUser } = await auth.signInWithGoogle();
+      onLoginSuccess(user, isNewUser);
+      onClose();
+    } catch (err: any) {
+      console.error('Google Sign In Error:', err);
+      setError(err.message || 'Unable to complete Google sign-in. Please try again.');
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
 
   const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,19 +105,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <SabiLogo size="sm" variant="full" theme="dark" />
             <button
               onClick={onClose}
-              className="p-1 text-[#A8C7BC] hover:text-white rounded-lg transition-colors"
+              className="p-1 text-[#A8C7BC] hover:text-white rounded-lg transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           <h2 className="text-xl font-bold font-serif text-white">
-            {mode === 'signup' ? 'Create Your Proof Identity' : 'Welcome Back to SABI'}
+            {customTitle || (mode === 'signup' ? 'Create Your Proof Identity' : 'Welcome Back to SABI')}
           </h2>
           <p className="text-xs text-[#CFE2D9] mt-1">
-            {mode === 'signup'
-              ? 'Start documenting real completed work. What you can do should count.'
-              : 'Sign in to access your documented work records and proof.'}
+            {customSubtitle ||
+              (mode === 'signup'
+                ? 'Start documenting real completed work. What you can do should count.'
+                : 'Sign in to access your documented work records and proof.')}
           </p>
         </div>
 
@@ -108,7 +130,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               setMode('signup');
               setError(null);
             }}
-            className={`py-3 border-b-2 transition-all ${
+            className={`py-3 border-b-2 transition-all cursor-pointer ${
               mode === 'signup'
                 ? 'border-[#4D7A70] text-[#2D4D45] bg-[#FAF8F5] font-bold'
                 : 'border-transparent hover:text-[#16222F]'
@@ -122,7 +144,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               setMode('login');
               setError(null);
             }}
-            className={`py-3 border-b-2 transition-all ${
+            className={`py-3 border-b-2 transition-all cursor-pointer ${
               mode === 'login'
                 ? 'border-[#4D7A70] text-[#2D4D45] bg-[#FAF8F5] font-bold'
                 : 'border-transparent hover:text-[#16222F]'
@@ -133,12 +155,61 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </div>
 
         {/* Form Body */}
-        <div className="p-6">
+        <div className="p-6 space-y-4">
           {error && (
-            <div className="mb-4 p-3 rounded-xl bg-red-50 text-red-700 text-xs border border-red-200">
+            <div className="p-3 rounded-xl bg-red-50 text-red-700 text-xs border border-red-200">
               {error}
             </div>
           )}
+
+          {/* STANDARD "CONTINUE WITH GOOGLE" BUTTON (MANAGED FIREBASE AUTH) */}
+          <div>
+            <button
+              type="button"
+              disabled={isGoogleLoading}
+              onClick={handleGoogleSignIn}
+              className="w-full py-3 px-4 bg-white hover:bg-stone-50 border border-[#D5CEC2] hover:border-[#16222F] text-[#16222F] font-semibold text-sm rounded-xl shadow-xs transition-all flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed group active:scale-[0.99]"
+            >
+              {isGoogleLoading ? (
+                <Loader2 className="w-5 h-5 text-[#4D7A70] animate-spin" />
+              ) : (
+                <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
+                  <path
+                    fill="#4285F4"
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                  />
+                  <path
+                    fill="#EA4335"
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                  />
+                </svg>
+              )}
+              <span>
+                {isGoogleLoading
+                  ? 'Connecting to Google...'
+                  : 'Continue with Google'}
+              </span>
+            </button>
+            <p className="text-[11px] text-[#7A8690] text-center mt-1.5">
+              Instant sign-in powered by Firebase Authentication
+            </p>
+          </div>
+
+          {/* Divider */}
+          <div className="relative flex items-center justify-center my-2">
+            <div className="border-t border-[#E7E2D8] w-full" />
+            <span className="bg-[#FAF8F5] px-3 text-[11px] font-bold uppercase tracking-wider text-[#7A8690] absolute">
+              or with username / email
+            </span>
+          </div>
 
           {mode === 'signup' ? (
             <form onSubmit={handleSignup} className="space-y-4">
@@ -211,7 +282,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="w-full py-3.5 rounded-2xl bg-[#4D7A70] hover:bg-[#2D4D45] text-white font-bold text-sm shadow-sm transition-all flex items-center justify-center gap-2"
+                  className="w-full py-3.5 rounded-2xl bg-[#4D7A70] hover:bg-[#2D4D45] text-white font-bold text-sm shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>Continue to Setup Profile</span>
                   <ArrowRight className="w-4 h-4" />
@@ -237,7 +308,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="w-full py-3.5 rounded-2xl bg-[#2D4D45] hover:bg-[#203731] text-white font-bold text-sm shadow-sm transition-all"
+                  className="w-full py-3.5 rounded-2xl bg-[#2D4D45] hover:bg-[#203731] text-white font-bold text-sm shadow-xs transition-all cursor-pointer"
                 >
                   Sign In to Sabi
                 </button>

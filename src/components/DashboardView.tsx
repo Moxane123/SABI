@@ -16,7 +16,15 @@ import {
   MessageSquare,
   Check
 } from 'lucide-react';
-import { UserProfile, WorkRecord, ProfileMetrics, SkillProofMetric, ActiveTab } from '../types';
+import {
+  UserProfile,
+  WorkRecord,
+  ProfileMetrics,
+  SkillProofMetric,
+  ActiveTab,
+  getRecordProofStatus,
+  ProofStatus
+} from '../types';
 
 interface DashboardViewProps {
   user: UserProfile | null;
@@ -401,25 +409,38 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
                   {/* Right: Status Badges matching brand kit */}
                   <div className="shrink-0 flex items-center gap-2">
-                    {isConfirmed ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[#EAF3EF] text-[#2D4D45] border border-[#CFE2D9]">
-                        <Check className="w-3 h-3 text-[#4D7A70]" strokeWidth={2.5} />
-                        <span>Confirmed</span>
-                      </span>
-                    ) : hasEvidence ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[#F3EFF9] text-[#61507C] border border-[#DDD5EB]">
-                        <span>Evidence Added</span>
-                      </span>
-                    ) : isPending ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[#FDF5EA] text-[#93652E] border border-[#F3DFC3]">
-                        <Clock className="w-3 h-3 text-[#D4A359]" />
-                        <span>Pending Confirmation</span>
-                      </span>
-                    ) : (
-                      <span className="text-[11px] text-[#7A8690] px-2 py-0.5 rounded-md bg-[#FAF8F5]">
-                        Documented
-                      </span>
-                    )}
+                    {(() => {
+                      const proofStatus: ProofStatus = getRecordProofStatus(rec);
+                      if (proofStatus === 'Client-confirmed') {
+                        return (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[#EAF3EF] text-[#2D4D45] border border-[#CFE2D9]">
+                            <Check className="w-3 h-3 text-[#4D7A70]" strokeWidth={2.5} />
+                            <span>Client-confirmed</span>
+                          </span>
+                        );
+                      }
+                      if (proofStatus === 'Confirmation pending') {
+                        return (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[#FDF5EA] text-[#93652E] border border-[#F3DFC3]">
+                            <Clock className="w-3 h-3 text-[#D4A359]" />
+                            <span>Confirmation pending</span>
+                          </span>
+                        );
+                      }
+                      if (proofStatus === 'Evidence-backed') {
+                        return (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[#F3EFF9] text-[#61507C] border border-[#DDD5EB]">
+                            <ShieldCheck className="w-3 h-3 text-[#8C7CA7]" />
+                            <span>Evidence-backed</span>
+                          </span>
+                        );
+                      }
+                      return (
+                        <span className="text-[11px] text-[#7A8690] px-2 py-0.5 rounded-md bg-[#FAF8F5] border border-[#E7E2D8]">
+                          Self-documented
+                        </span>
+                      );
+                    })()}
 
                     <ArrowRight className="w-4 h-4 text-[#C2BDB2] group-hover:text-[#4D7A70] transition-colors hidden sm:block" />
                   </div>

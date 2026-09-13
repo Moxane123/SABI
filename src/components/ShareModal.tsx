@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { X, Copy, Check, ExternalLink, ShieldCheck, QrCode } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Copy, Check, ExternalLink, ShieldCheck, QrCode, Share2, Download } from 'lucide-react';
+import QRCode from 'qrcode';
 import { UserProfile } from '../types';
 
 interface ShareModalProps {
@@ -12,7 +13,21 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, user })
   if (!isOpen) return null;
 
   const [copied, setCopied] = useState(false);
+  const [qrUrl, setQrUrl] = useState<string>('');
   const profileUrl = `${window.location.origin}${window.location.pathname}?u=${user.username}`;
+
+  useEffect(() => {
+    QRCode.toDataURL(profileUrl, {
+      width: 240,
+      margin: 2,
+      color: {
+        dark: '#1F2421',
+        light: '#FFFFFF',
+      },
+    })
+      .then((url) => setQrUrl(url))
+      .catch((err) => console.error('Error generating QR code:', err));
+  }, [profileUrl]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(profileUrl);
@@ -20,10 +35,21 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, user })
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Generate a clean QR code using Google chart API for clean visual sharing
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
-    profileUrl
-  )}`;
+  const handleNativeShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${user.fullName} — Professional Proof Profile`,
+          text: `Explore documented work, evidence, and client confirmations for ${user.fullName} on SABI.`,
+          url: profileUrl,
+        });
+      } catch {
+        // User cancelled or share dismissed
+      }
+    } else {
+      handleCopy();
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-stone-950/70 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
@@ -37,19 +63,25 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, user })
           </div>
           <button
             onClick={onClose}
-            className="p-1 text-stone-400 hover:text-stone-700 rounded-lg"
+            className="p-1 text-stone-400 hover:text-stone-700 rounded-lg transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="p-6 text-center space-y-4">
-          <div className="w-36 h-36 mx-auto p-2 bg-white rounded-2xl border border-stone-200 shadow-xs flex items-center justify-center">
-            <img
-              src={qrUrl}
-              alt="Profile QR code"
-              className="w-full h-full object-contain"
-            />
+          <div className="w-44 h-44 mx-auto p-2 bg-white rounded-2xl border border-stone-200 shadow-xs flex items-center justify-center">
+            {qrUrl ? (
+              <img
+                src={qrUrl}
+                alt="Profile QR code"
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-stone-400 text-xs font-mono">
+                Generating QR...
+              </div>
+            )}
           </div>
 
           <div>
@@ -70,7 +102,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, user })
               />
               <button
                 onClick={handleCopy}
-                className="px-3 py-2 bg-stone-900 hover:bg-stone-800 text-stone-100 rounded-xl text-xs font-semibold flex items-center gap-1 shrink-0"
+                className="px-3 py-2 bg-stone-900 hover:bg-stone-800 text-stone-100 rounded-xl text-xs font-semibold flex items-center gap-1 shrink-0 transition-colors cursor-pointer"
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copied ? 'Copied' : 'Copy'}</span>
@@ -78,14 +110,37 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, user })
             </div>
           </div>
 
-          <p className="text-[11px] text-stone-500 text-left">
-            Anyone with this link can view your completed work, examine photo/video evidence, and read client confirmations without needing to log in.
+          <div className="flex items-center gap-2 pt-1">
+            {qrUrl && (
+              <a
+                href={qrUrl}
+                download={`${user.username || 'sabi'}-proof-qr.png`}
+                className="flex-1 py-2 px-3 bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Save QR Code</span>
+              </a>
+            )}
+
+            {typeof navigator !== 'undefined' && 'share' in navigator && (
+              <button
+                onClick={handleNativeShare}
+                className="flex-1 py-2 px-3 bg-[#4D7A70] hover:bg-[#3D635B] text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                <span>Share Link</span>
+              </button>
+            )}
+          </div>
+
+          <p className="text-[11px] text-stone-500 text-left leading-relaxed">
+            Anyone with this link can view your completed work, examine photo/document evidence, and read client confirmations without needing to log in. Private records remain hidden.
           </p>
 
           <div className="pt-2">
             <button
               onClick={onClose}
-              className="w-full py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-800 font-semibold text-xs rounded-xl"
+              className="w-full py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-800 font-semibold text-xs rounded-xl transition-colors cursor-pointer"
             >
               Done
             </button>

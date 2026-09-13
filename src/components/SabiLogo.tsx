@@ -2,7 +2,7 @@ import React from 'react';
 
 interface SabiLogoProps {
   className?: string;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'hero';
   variant?: 'full' | 'icon';
   tagline?: boolean;
   theme?: 'light' | 'dark';
@@ -20,6 +20,7 @@ export const SabiLogo: React.FC<SabiLogoProps> = ({
     md: 36,
     lg: 48,
     xl: 64,
+    hero: 280,
   }[size];
 
   const textSize = {
@@ -27,6 +28,7 @@ export const SabiLogo: React.FC<SabiLogoProps> = ({
     md: 'text-2xl',
     lg: 'text-3xl',
     xl: 'text-4xl',
+    hero: 'text-7xl',
   }[size];
 
   const textColor = theme === 'dark' ? 'text-white' : 'text-[#16222F]';
@@ -89,23 +91,23 @@ export const SabiLogo: React.FC<SabiLogoProps> = ({
         <div className="flex flex-col">
           <div className="flex items-baseline leading-none">
             <span
-              className={`font-serif tracking-tight font-bold ${textSize} ${textColor}`}
-              style={{ fontFamily: "'Playfair Display', 'Newsreader', Georgia, serif" }}
+              className={`font-display tracking-tight font-extrabold ${textSize} ${textColor}`}
+              style={{ fontFamily: "'Bricolage Grotesque', 'Instrument Sans', sans-serif" }}
             >
               Sab
             </span>
             {/* 'i' with custom lavender dot */}
             <span
-              className={`font-serif tracking-tight font-bold ${textSize} ${textColor} relative inline-block`}
-              style={{ fontFamily: "'Playfair Display', 'Newsreader', Georgia, serif" }}
+              className={`font-display tracking-tight font-extrabold ${textSize} ${textColor} relative inline-block`}
+              style={{ fontFamily: "'Bricolage Grotesque', 'Instrument Sans', sans-serif" }}
             >
               ı
               {/* Lavender Dot above the dotless 'ı' */}
               <span
                 className="absolute left-1/2 -top-[0.2em] -translate-x-1/2 rounded-full bg-[#8C7CA7]"
                 style={{
-                  width: size === 'sm' ? 4 : size === 'md' ? 5 : size === 'lg' ? 6 : 8,
-                  height: size === 'sm' ? 4 : size === 'md' ? 5 : size === 'lg' ? 6 : 8,
+                  width: size === 'sm' ? 4 : size === 'md' ? 5 : size === 'lg' ? 6 : size === 'xl' ? 8 : 14,
+                  height: size === 'sm' ? 4 : size === 'md' ? 5 : size === 'lg' ? 6 : size === 'xl' ? 8 : 14,
                 }}
               />
             </span>

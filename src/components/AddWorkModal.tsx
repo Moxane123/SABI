@@ -254,7 +254,7 @@ export const AddWorkModal: React.FC<AddWorkModalProps> = ({
       return 'Confirmation pending';
     }
     if (evidenceList.length > 0 || (editingRecord?.evidenceList && editingRecord.evidenceList.length > 0)) {
-      return 'Evidence attached';
+      return 'Evidence-backed';
     }
     return 'Self-documented';
   };
@@ -1000,10 +1000,10 @@ export const AddWorkModal: React.FC<AddWorkModalProps> = ({
                     </span>
                   )}
 
-                  {projectedStatus === 'Evidence attached' && (
+                  {projectedStatus === 'Evidence-backed' && (
                     <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-blue-800 border border-blue-200">
                       <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-                      <span>Evidence attached ({evidenceList.length} items)</span>
+                      <span>Evidence-backed ({evidenceList.length} items)</span>
                     </span>
                   )}
 
@@ -1017,8 +1017,8 @@ export const AddWorkModal: React.FC<AddWorkModalProps> = ({
 
                 <p className="text-[11px] text-stone-500 leading-relaxed">
                   {projectedStatus === 'Confirmation pending'
-                    ? 'A verification link will be generated upon saving. Once your client reviews and approves it, this record will advance to "Client confirmed". SABI never marks work as confirmed automatically.'
-                    : projectedStatus === 'Evidence attached'
+                    ? 'A verification link will be generated upon saving. Once your client reviews and approves it, this record will advance to "Client-confirmed". SABI never marks work as confirmed automatically.'
+                    : projectedStatus === 'Evidence-backed'
                     ? 'Your attached artifacts will provide proof of delivery. You can request client verification anytime later.'
                     : 'Saved as self-reported work. You can attach proof photos, documents, or request client verification at any time.'}
                 </p>

@@ -19,7 +19,8 @@ import {
   SkillProofMetric,
   ActiveTab,
   EvidenceType,
-  VisibilityStatus
+  VisibilityStatus,
+  DiscoverProfessional,
 } from './types';
 import { db } from './services/db';
 import { auth } from './services/auth';
@@ -31,6 +32,7 @@ import { DashboardView } from './components/DashboardView';
 import { MyWorkView } from './components/MyWorkView';
 import { ProfileView } from './components/ProfileView';
 import { PublicProfileView } from './components/PublicProfileView';
+import { DiscoverView } from './components/DiscoverView';
 import { ClientConfirmView } from './components/ClientConfirmView';
 import { AddWorkModal } from './components/AddWorkModal';
 import { WorkDetailModal } from './components/WorkDetailModal';
@@ -38,13 +40,16 @@ import { RequestConfirmModal } from './components/RequestConfirmModal';
 import { AuthModal } from './components/AuthModal';
 import { ShareModal } from './components/ShareModal';
 import { OnboardingModal } from './components/OnboardingModal';
+import { MessagesView } from './components/MessagesView';
 import { SabiLogo } from './components/SabiLogo';
+import { LandingPageView } from './components/LandingPageView';
 
 export function App() {
   // Authentication & Profile State
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => auth.getCurrentUser());
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [isPublicMode, setIsPublicMode] = useState<boolean>(false);
+  const [guestExploring, setGuestExploring] = useState<boolean>(false);
 
   // Data State
   const [records, setRecords] = useState<WorkRecord[]>([]);
@@ -72,6 +77,13 @@ export function App() {
   // External Portal State (Client Confirmation & Public Visitor)
   const [clientConfirmToken, setClientConfirmToken] = useState<string | null>(null);
   const [publicUserSlug, setPublicUserSlug] = useState<string | null>(null);
+  const [viewingPublicUser, setViewingPublicUser] = useState<UserProfile | null>(null);
+  const [discoverables, setDiscoverables] = useState<DiscoverProfessional[]>([]);
+
+  // Messaging state
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState<number>(0);
+  const [authCustomPrompt, setAuthCustomPrompt] = useState<{ title?: string; subtitle?: string } | null>(null);
 
   // Parse URL query parameters on load
   useEffect(() => {
@@ -85,6 +97,26 @@ export function App() {
       setPublicUserSlug(uSlug);
     }
   }, []);
+
+  // Listen to message updates and maintain unread counter
+  useEffect(() => {
+    if (currentUser) {
+      db.ensureStarterConversation(currentUser.id);
+      setUnreadMessagesCount(db.getUnreadMessagesCount(currentUser.id));
+    } else {
+      setUnreadMessagesCount(0);
+    }
+
+    const unsub = db.subscribeToMessages(() => {
+      if (currentUser) {
+        setUnreadMessagesCount(db.getUnreadMessagesCount(currentUser.id));
+      } else {
+        setUnreadMessagesCount(0);
+      }
+    });
+
+    return () => unsub();
+  }, [currentUser]);
 
   // Refresh user data & metrics from DB
   const refreshData = (userOverride?: UserProfile | null) => {
@@ -104,10 +136,19 @@ export function App() {
       setMetrics(guestMetrics);
       setSkillMetrics(sMetrics);
     }
+
+    setDiscoverables(db.getDiscoverableProfessionals());
   };
 
   useEffect(() => {
     refreshData();
+    // Subscribe to Firebase auth state changes
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      refreshData(user);
+    });
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
   }, []);
 
   // Handle Save Work Record (Add or Edit)
@@ -253,10 +294,52 @@ export function App() {
   };
 
   // Handle Logout
-  const handleLogout = () => {
-    auth.logout();
+  const handleLogout = async () => {
+    await auth.logout();
     refreshData(null);
     setIsPublicMode(false);
+    setGuestExploring(false);
+  };
+
+  const handleLoginSuccess = (user: UserProfile, isNewSignup?: boolean) => {
+    refreshData(user);
+    setGuestExploring(false);
+    setAuthCustomPrompt(null);
+    setIsAuthOpen(false);
+    if (isNewSignup || user.onboardingCompleted === false) {
+      setIsOnboardingOpen(true);
+    } else {
+      setActiveTab('dashboard');
+    }
+  };
+
+  // Primary connection journey: DISCOVER -> REVIEW PROOF -> MESSAGE -> OPPORTUNITY
+  const handleStartConversation = (targetUser: UserProfile) => {
+    if (!currentUser) {
+      setAuthCustomPrompt({
+        title: 'Sign In to Message',
+        subtitle: `Connect directly with ${targetUser.fullName} after reviewing their documented work and proof.`,
+      });
+      setIsAuthOpen(true);
+      return;
+    }
+
+    if (currentUser.id === targetUser.id) {
+      return;
+    }
+
+    const conversation = db.getOrCreateConversation(
+      currentUser.id,
+      targetUser.id,
+      'discovered_via_proof',
+      targetUser.id
+    );
+
+    setSelectedConversationId(conversation.id);
+    setViewingPublicUser(null);
+    setPublicUserSlug(null);
+    setIsPublicMode(false);
+    setActiveTab('messages');
   };
 
   // CHECK: Is user visiting via client confirmation link?
@@ -286,7 +369,7 @@ export function App() {
     const targetUser = db.getUserByUsername(publicUserSlug);
     if (targetUser) {
       const targetRecords = db.getWorkRecordsByUserId(targetUser.id);
-      const { metrics: targetMetrics, skillProofMetrics: targetSkills } = db.calculateMetrics(targetUser.id);
+      const { metrics: targetMetrics, skillProofMetrics: targetSkills } = db.calculateMetrics(targetUser.id, true);
 
       return (
         <PublicProfileView
@@ -295,6 +378,7 @@ export function App() {
           metrics={targetMetrics}
           skillMetrics={targetSkills}
           isOwner={currentUser?.id === targetUser.id}
+          onMessage={handleStartConversation}
           onBackToEditor={() => {
             const url = new URL(window.location.href);
             url.searchParams.delete('u');
@@ -309,26 +393,103 @@ export function App() {
 
   // CHECK: If user toggled Public View mode for their own profile
   if (isPublicMode && currentUser) {
+    const { metrics: publicMetrics, skillProofMetrics: publicSkills } = db.calculateMetrics(currentUser.id, true);
     return (
       <PublicProfileView
         user={currentUser}
         records={records}
-        metrics={metrics}
-        skillMetrics={skillMetrics}
+        metrics={publicMetrics}
+        skillMetrics={publicSkills}
         isOwner={true}
         onBackToEditor={() => setIsPublicMode(false)}
       />
     );
   }
 
+  // CHECK: If visitor clicked to inspect a discovered professional's proof profile
+  if (viewingPublicUser) {
+    const targetRecords = db
+      .getWorkRecordsByUserId(viewingPublicUser.id)
+      .filter((r) => r.visibility === 'public');
+    const { metrics: targetMetrics, skillProofMetrics: targetSkills } = db.calculateMetrics(
+      viewingPublicUser.id,
+      true
+    );
+
+    return (
+      <PublicProfileView
+        user={viewingPublicUser}
+        records={targetRecords}
+        metrics={targetMetrics}
+        skillMetrics={targetSkills}
+        isOwner={currentUser?.id === viewingPublicUser.id}
+        onMessage={handleStartConversation}
+        onBackToEditor={() => {
+          setViewingPublicUser(null);
+        }}
+      />
+    );
+  }
+
+  // CHECK: If user is not authenticated and not explicitly browsing as guest, render Sabi Landing Page
+  if (!currentUser && !guestExploring) {
+    return (
+      <LandingPageView
+        onLoginSuccess={handleLoginSuccess}
+        onExploreGuest={() => {
+          setGuestExploring(true);
+          setActiveTab('discover');
+        }}
+      />
+    );
+  }
+
+  const handleTabChange = (tab: ActiveTab) => {
+    setViewingPublicUser(null);
+    setIsPublicMode(false);
+    setActiveTab(tab);
+  };
+
   return (
     <div className="min-h-screen bg-[#FAF8F5] text-[#16222F] flex flex-col font-sans selection:bg-[#EAF3EF] selection:text-[#2D4D45]">
+      {/* Guest Mode Banner */}
+      {!currentUser && guestExploring && (
+        <div className="bg-[#152722] text-white px-4 py-2.5 text-xs flex flex-wrap items-center justify-between gap-3 border-b border-[#20362F] sticky top-0 z-50">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#4D7A70] animate-pulse" />
+            <span className="font-medium text-[#CFE2D9]">
+              You are exploring the SABI Proof Directory in guest mode.
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setGuestExploring(false)}
+              className="text-xs text-[#A1B8B1] hover:text-white transition-colors cursor-pointer font-medium"
+            >
+              ← Back to Sign In / Sign Up
+            </button>
+            <button
+              onClick={() => {
+                setAuthCustomPrompt(null);
+                setIsAuthOpen(true);
+              }}
+              className="px-3.5 py-1.5 rounded-full bg-[#4D7A70] hover:bg-[#3D665D] text-white font-bold text-xs shadow-xs transition-colors cursor-pointer"
+            >
+              Sign In with Google
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <Header
         user={currentUser}
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        onOpenAuth={() => setIsAuthOpen(true)}
+        setActiveTab={handleTabChange}
+        onOpenAuth={() => {
+          setAuthCustomPrompt(null);
+          setIsAuthOpen(true);
+        }}
         onLogout={handleLogout}
         onOpenAddWork={() => {
           setEditingRecord(null);
@@ -337,6 +498,7 @@ export function App() {
         isPublicMode={isPublicMode}
         setIsPublicMode={setIsPublicMode}
         onShareProfile={() => setIsShareOpen(true)}
+        unreadMessagesCount={unreadMessagesCount}
       />
 
       {/* Main Content Area — Open interfaces ready for use */}
@@ -352,7 +514,7 @@ export function App() {
               setIsAddWorkOpen(true);
             }}
             onSelectWork={(rec) => setSelectedRecord(rec)}
-            setActiveTab={setActiveTab}
+            setActiveTab={handleTabChange}
             setIsPublicMode={setIsPublicMode}
             onShareProfile={() => setIsShareOpen(true)}
             onRequestConfirm={(rec) => setConfirmTargetRecord(rec)}
@@ -389,18 +551,56 @@ export function App() {
             onShareProfile={() => setIsShareOpen(true)}
           />
         )}
+
+        {activeTab === 'discover' && (
+          <DiscoverView
+            currentUser={currentUser}
+            discoverables={discoverables}
+            onViewProfessional={(profUser) => {
+              setViewingPublicUser(profUser);
+            }}
+            onUpdateCurrentUser={(updated) => {
+              handleUpdateProfile(updated);
+              refreshData();
+            }}
+            onGoToProfile={() => handleTabChange('profile')}
+            onMessageProfessional={handleStartConversation}
+          />
+        )}
+
+        {activeTab === 'messages' && (
+          <MessagesView
+            currentUser={currentUser}
+            selectedConversationId={selectedConversationId}
+            onSelectConversation={(id) => setSelectedConversationId(id)}
+            onViewProofProfile={(profUser) => {
+              setViewingPublicUser(profUser);
+            }}
+            onGoToDiscover={() => handleTabChange('discover')}
+            onPromptAuth={(reason) => {
+              setAuthCustomPrompt({
+                title: 'Sign In to Access Messages',
+                subtitle:
+                  reason ||
+                  'Sign in or create an account to view and respond to your direct professional messages.',
+              });
+              setIsAuthOpen(true);
+            }}
+          />
+        )}
       </main>
 
       {/* Mobile Bottom Navigation Bar */}
       <MobileBottomNav
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleTabChange}
         onOpenAddWork={() => {
           setEditingRecord(null);
           setIsAddWorkOpen(true);
         }}
         isPublicMode={isPublicMode}
         setIsPublicMode={setIsPublicMode}
+        unreadMessagesCount={unreadMessagesCount}
       />
 
       {/* Onboarding Flow Modal */}
@@ -456,15 +656,13 @@ export function App() {
 
       <AuthModal
         isOpen={isAuthOpen}
-        onClose={() => setIsAuthOpen(false)}
-        onLoginSuccess={(user, isNewSignup) => {
-          refreshData(user);
-          if (isNewSignup || user.onboardingCompleted === false) {
-            setIsOnboardingOpen(true);
-          } else {
-            setActiveTab('dashboard');
-          }
+        onClose={() => {
+          setIsAuthOpen(false);
+          setAuthCustomPrompt(null);
         }}
+        customTitle={authCustomPrompt?.title}
+        customSubtitle={authCustomPrompt?.subtitle}
+        onLoginSuccess={handleLoginSuccess}
       />
 
       {currentUser && (
