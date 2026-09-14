@@ -21,7 +21,10 @@ import {
   RotateCcw,
   Globe,
   Lock,
-  EyeOff
+  EyeOff,
+  LayoutGrid,
+  List,
+  Check
 } from 'lucide-react';
 import {
   WorkRecord,
@@ -67,6 +70,7 @@ export const MyWorkView: React.FC<MyWorkViewProps> = ({
   const [selectedProofStatus, setSelectedProofStatus] = useState<string>('all');
   const [selectedEvidenceStatus, setSelectedEvidenceStatus] = useState<string>('all');
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   // Filter & sort records
   const filteredRecords = useMemo(() => {
@@ -226,6 +230,37 @@ export const MyWorkView: React.FC<MyWorkViewProps> = ({
           />
         </div>
 
+        {/* Quick Proof Status Filter Chips for Desktop & Mobile */}
+        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+          <span className="text-[11px] font-bold text-stone-400 mr-1 uppercase tracking-wider">Proof Level:</span>
+          {[
+            { id: 'all', label: 'All Records', count: records.length },
+            { id: 'Client-confirmed', label: 'Client-confirmed', count: stats.clientConfirmedCount },
+            { id: 'Evidence-backed', label: 'Evidence-backed', count: stats.evidenceAttachedCount },
+            { id: 'Confirmation pending', label: 'Pending Review', count: stats.confirmationPendingCount },
+            { id: 'Self-documented', label: 'Self-documented', count: stats.selfDocumentedCount },
+          ].map((tab) => {
+            const isSelected = selectedProofStatus === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setSelectedProofStatus(tab.id)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border cursor-pointer ${
+                  isSelected
+                    ? 'bg-[#16222F] text-white border-[#16222F] shadow-2xs font-bold'
+                    : 'bg-white border-stone-200 text-stone-600 hover:text-stone-900 hover:bg-stone-50'
+                }`}
+              >
+                <span>{tab.label}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${isSelected ? 'bg-white/20 text-white' : 'bg-stone-100 text-stone-600'}`}>
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
         {/* Filter Controls Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-1">
           
@@ -311,25 +346,57 @@ export const MyWorkView: React.FC<MyWorkViewProps> = ({
 
         </div>
 
-        {/* Results count & active tags */}
-        <div className="flex items-center justify-between pt-2 border-t border-stone-100 text-xs text-stone-500">
-          <span>
-            Showing <strong className="text-stone-900">{filteredRecords.length}</strong> of{' '}
-            <strong>{records.length}</strong> work records
-          </span>
-          {hasActiveFilters && (
+        {/* Results count & active tags & view switcher */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-stone-100 text-xs text-stone-500">
+          <div className="flex items-center gap-3">
+            <span>
+              Showing <strong className="text-stone-900">{filteredRecords.length}</strong> of{' '}
+              <strong>{records.length}</strong> work records
+            </span>
+            {hasActiveFilters && (
+              <button
+                onClick={handleResetFilters}
+                className="text-amber-800 hover:underline text-xs font-semibold cursor-pointer"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+
+          {/* View Switcher: Grid vs List (Desktop & Tablet optimized) */}
+          <div className="flex items-center gap-1 bg-stone-100 p-0.5 rounded-xl border border-stone-200">
             <button
-              onClick={handleResetFilters}
-              className="text-amber-800 hover:underline text-xs font-semibold"
+              type="button"
+              onClick={() => setViewMode('grid')}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                viewMode === 'grid'
+                  ? 'bg-white text-stone-900 shadow-2xs font-bold'
+                  : 'text-stone-500 hover:text-stone-800'
+              }`}
+              title="Grid View (Responsive Cards)"
             >
-              Clear filters
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span>Grid</span>
             </button>
-          )}
+            <button
+              type="button"
+              onClick={() => setViewMode('list')}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                viewMode === 'list'
+                  ? 'bg-white text-stone-900 shadow-2xs font-bold'
+                  : 'text-stone-500 hover:text-stone-800'
+              }`}
+              title="List View (Dense Ledger)"
+            >
+              <List className="w-3.5 h-3.5" />
+              <span>List</span>
+            </button>
+          </div>
         </div>
 
       </div>
 
-      {/* Work Records List */}
+      {/* Work Records Display (Grid or List) */}
       {filteredRecords.length === 0 ? (
         <div className="p-12 text-center bg-white rounded-2xl border border-dashed border-stone-300 space-y-3">
           <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-700 flex items-center justify-center mx-auto">
@@ -346,20 +413,216 @@ export const MyWorkView: React.FC<MyWorkViewProps> = ({
           {records.length === 0 ? (
             <button
               onClick={onOpenAddWork}
-              className="px-4 py-2 bg-amber-500 text-stone-950 font-bold text-xs rounded-xl shadow-xs hover:bg-amber-400 transition-colors mt-2"
+              className="px-4 py-2 bg-amber-500 text-stone-950 font-bold text-xs rounded-xl shadow-xs hover:bg-amber-400 transition-colors mt-2 cursor-pointer"
             >
               + Document Your First Work
             </button>
           ) : (
             <button
               onClick={handleResetFilters}
-              className="px-4 py-1.5 bg-stone-100 text-stone-700 text-xs font-semibold rounded-lg hover:bg-stone-200 transition-colors"
+              className="px-4 py-1.5 bg-stone-100 text-stone-700 text-xs font-semibold rounded-lg hover:bg-stone-200 transition-colors cursor-pointer"
             >
               Reset Filters
             </button>
           )}
         </div>
+      ) : viewMode === 'grid' ? (
+        /* ======================================================= */
+        /* RESPONSIVE GRID VIEW (Bento style for Desktop & Tablet) */
+        /* ======================================================= */
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          {filteredRecords.map((record) => {
+            const proofStatus: ProofStatus = getRecordProofStatus(record);
+            const evidenceCount = record.evidenceList ? record.evidenceList.length : 0;
+            const confirmation = record.confirmation;
+            const firstImage = record.evidenceList?.find((e) => e.type === 'image')?.url;
+
+            return (
+              <div
+                key={record.id}
+                className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-2xs hover:border-[#4D7A70] hover:shadow-sm transition-all flex flex-col justify-between group"
+              >
+                <div>
+                  {/* Lead Thumbnail / Header Banner */}
+                  {firstImage ? (
+                    <div
+                      onClick={() => onSelectWork(record)}
+                      className="h-44 w-full overflow-hidden bg-[#FAF8F5] relative cursor-pointer border-b border-stone-100"
+                    >
+                      <img
+                        src={firstImage}
+                        alt={record.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute bottom-2.5 right-2.5 bg-black/70 backdrop-blur-xs text-white text-[11px] font-medium px-2 py-0.5 rounded-lg flex items-center gap-1">
+                        <ImageIcon className="w-3 h-3 text-[#D4A359]" />
+                        <span>{evidenceCount} Proof {evidenceCount === 1 ? 'Item' : 'Items'}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => onSelectWork(record)}
+                      className="h-28 w-full bg-[#FAF8F5] flex items-center justify-between p-4 border-b border-stone-100 cursor-pointer"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-stone-200/70 text-stone-500 flex items-center justify-center">
+                        <FileText className="w-5 h-5" />
+                      </div>
+                      {evidenceCount > 0 && (
+                        <span className="text-[11px] font-semibold text-stone-500 bg-white px-2 py-1 rounded-lg border border-stone-200">
+                          {evidenceCount} Proof Attached
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Body Content */}
+                  <div className="p-4 space-y-3">
+                    {/* Meta & Status */}
+                    <div className="flex items-center justify-between gap-2 text-xs">
+                      <div className="flex items-center gap-1.5 text-stone-500 text-[11px]">
+                        <span className="font-semibold uppercase text-stone-700 bg-stone-100 px-2 py-0.5 rounded text-[10px]">
+                          {record.category}
+                        </span>
+                        <span>•</span>
+                        <span>{record.completionDate}</span>
+                      </div>
+
+                      {/* Visibility indicator */}
+                      <div className="flex items-center gap-1">
+                        {record.visibility === 'public' && (
+                          <span title="Public Profile Record">
+                            <Globe className="w-3 h-3 text-emerald-600" />
+                          </span>
+                        )}
+                        {record.visibility === 'unlisted' && (
+                          <span title="Unlisted Link Only">
+                            <EyeOff className="w-3 h-3 text-amber-600" />
+                          </span>
+                        )}
+                        {record.visibility === 'private' && (
+                          <span title="Private Draft">
+                            <Lock className="w-3 h-3 text-stone-400" />
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Proof Status Badge */}
+                    <div>
+                      {proofStatus === 'Client-confirmed' && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#EAF3EF] text-[#2D4D45] border border-[#CFE2D9]">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#4D7A70]" strokeWidth={2.5} />
+                          <span>Client-confirmed</span>
+                        </span>
+                      )}
+                      {proofStatus === 'Confirmation pending' && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#FDF5EA] text-[#93652E] border border-[#F3DFC3]">
+                          <Clock className="w-3.5 h-3.5 text-[#D4A359]" />
+                          <span>Confirmation pending</span>
+                        </span>
+                      )}
+                      {proofStatus === 'Evidence-backed' && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#F3EFF9] text-[#61507C] border border-[#DDD5EB]">
+                          <ShieldCheck className="w-3.5 h-3.5 text-[#8C7CA7]" />
+                          <span>Evidence-backed</span>
+                        </span>
+                      )}
+                      {proofStatus === 'Self-documented' && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-[#FAF8F5] text-[#7A8690] border border-[#E7E2D8]">
+                          <FileText className="w-3.5 h-3.5 text-[#A7B1AB]" />
+                          <span>Self-documented</span>
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Title & Description */}
+                    <div>
+                      <h3
+                        onClick={() => onSelectWork(record)}
+                        className="font-bold text-sm sm:text-base text-stone-900 hover:text-[#4D7A70] cursor-pointer transition-colors line-clamp-1"
+                      >
+                        {record.title}
+                      </h3>
+                      <p className="text-xs text-stone-500 line-clamp-2 mt-1 leading-relaxed">
+                        {record.description}
+                      </p>
+                    </div>
+
+                    {/* Testimonial preview if confirmed */}
+                    {proofStatus === 'Client-confirmed' && confirmation?.testimonial && (
+                      <div className="p-2.5 bg-emerald-50/70 border border-emerald-200/70 rounded-xl text-[11px] text-stone-800 italic line-clamp-2">
+                        “{confirmation.testimonial}”
+                      </div>
+                    )}
+
+                    {/* Skills Chips */}
+                    {record.skillsDemonstrated && record.skillsDemonstrated.length > 0 && (
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {record.skillsDemonstrated.slice(0, 3).map((sk, idx) => (
+                          <span
+                            key={idx}
+                            className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-stone-100 text-stone-700 border border-stone-200"
+                          >
+                            {sk}
+                          </span>
+                        ))}
+                        {record.skillsDemonstrated.length > 3 && (
+                          <span className="text-[10px] text-stone-400 font-semibold px-1 py-0.5">
+                            +{record.skillsDemonstrated.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Grid Card Footer */}
+                <div className="p-3 border-t border-stone-100 bg-stone-50/50 flex items-center justify-between gap-2 text-xs">
+                  <button
+                    onClick={() => onSelectWork(record)}
+                    className="px-3 py-1.5 bg-[#16222F] hover:bg-stone-800 text-white font-bold rounded-lg transition-colors cursor-pointer text-xs"
+                  >
+                    View Proof
+                  </button>
+
+                  <div className="flex items-center gap-1">
+                    {proofStatus !== 'Client-confirmed' && (
+                      <button
+                        onClick={() => onRequestConfirm(record)}
+                        className="p-1.5 text-[#2D4D45] hover:text-[#16222F] hover:bg-[#EAF3EF] rounded-lg transition-colors cursor-pointer"
+                        title={proofStatus === 'Confirmation pending' ? 'Update Review Link' : 'Request Confirmation'}
+                      >
+                        <UserCheck className="w-4 h-4" />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => onEditWork(record)}
+                      className="p-1.5 text-stone-500 hover:text-stone-900 hover:bg-stone-200/70 rounded-lg transition-colors cursor-pointer"
+                      title="Edit record"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm(`Delete "${record.title}"?`)) {
+                          onDeleteWork(record.id);
+                        }
+                      }}
+                      className="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                      title="Delete record"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       ) : (
+        /* ======================================================= */
+        /* DETAILED LIST / AUDIT LEDGER VIEW                       */
+        /* ======================================================= */
         <div className="space-y-4">
           {filteredRecords.map((record) => {
             const proofStatus: ProofStatus = getRecordProofStatus(record);

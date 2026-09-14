@@ -21,9 +21,11 @@ import {
   EvidenceType,
   VisibilityStatus,
   DiscoverProfessional,
+  PlatformStatusRecord,
 } from './types';
 import { db } from './services/db';
 import { auth } from './services/auth';
+import { operationsService } from './services/operationsService';
 
 // Components
 import { Header } from './components/Header';
@@ -43,6 +45,9 @@ import { OnboardingModal } from './components/OnboardingModal';
 import { MessagesView } from './components/MessagesView';
 import { SabiLogo } from './components/SabiLogo';
 import { LandingPageView } from './components/LandingPageView';
+import { OperationsCenter } from './components/operations/OperationsCenter';
+import { MaintenanceBanner } from './components/operations/MaintenanceBanner';
+import { SuspendedScreen } from './components/operations/SuspendedScreen';
 
 export function App() {
   // Authentication & Profile State
@@ -50,6 +55,11 @@ export function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [isPublicMode, setIsPublicMode] = useState<boolean>(false);
   const [guestExploring, setGuestExploring] = useState<boolean>(false);
+
+  // Real-time Platform Status State
+  const [platformStatus, setPlatformStatus] = useState<PlatformStatusRecord>(() =>
+    operationsService.getPlatformStatus()
+  );
 
   // Data State
   const [records, setRecords] = useState<WorkRecord[]>([]);
@@ -90,12 +100,24 @@ export function App() {
     const params = new URLSearchParams(window.location.search);
     const confirmToken = params.get('confirm');
     const uSlug = params.get('u');
+    const tabParam = params.get('tab');
+    const adminParam = params.get('admin');
 
-    if (confirmToken) {
+    if (tabParam === 'operations' || adminParam === '1') {
+      setActiveTab('operations');
+    } else if (confirmToken) {
       setClientConfirmToken(confirmToken);
     } else if (uSlug) {
       setPublicUserSlug(uSlug);
     }
+  }, []);
+
+  // Subscribe to real-time platform status changes
+  useEffect(() => {
+    const unsub = operationsService.subscribeToPlatformStatus((newStatus) => {
+      setPlatformStatus(newStatus);
+    });
+    return () => unsub();
   }, []);
 
   // Listen to message updates and maintain unread counter
@@ -342,6 +364,32 @@ export function App() {
     setActiveTab('messages');
   };
 
+  // CHECK: If admin has opened the Sabi Operations Center
+  if (activeTab === 'operations') {
+    return (
+      <OperationsCenter
+        currentUser={currentUser}
+        onExitToApp={() => {
+          const url = new URL(window.location.href);
+          url.searchParams.delete('tab');
+          url.searchParams.delete('admin');
+          window.history.pushState({}, '', url.toString());
+          setActiveTab('dashboard');
+        }}
+      />
+    );
+  }
+
+  // CHECK: Is Sabi Platform in a real backend-controlled SUSPENDED state?
+  if (platformStatus.status === 'SUSPENDED') {
+    return (
+      <SuspendedScreen
+        statusRecord={platformStatus}
+        onOpenOperationsGate={() => setActiveTab('operations')}
+      />
+    );
+  }
+
   // CHECK: Is user visiting via client confirmation link?
   if (clientConfirmToken) {
     const confirmationData = db.getConfirmationByToken(clientConfirmToken);
@@ -434,13 +482,22 @@ export function App() {
   // CHECK: If user is not authenticated and not explicitly browsing as guest, render Sabi Landing Page
   if (!currentUser && !guestExploring) {
     return (
-      <LandingPageView
-        onLoginSuccess={handleLoginSuccess}
-        onExploreGuest={() => {
-          setGuestExploring(true);
-          setActiveTab('discover');
-        }}
-      />
+      <>
+        {platformStatus.status === 'MAINTENANCE' && (
+          <MaintenanceBanner
+            statusRecord={platformStatus}
+            onOpenOperations={() => setActiveTab('operations')}
+          />
+        )}
+        <LandingPageView
+          onLoginSuccess={handleLoginSuccess}
+          onExploreGuest={() => {
+            setGuestExploring(true);
+            setActiveTab('discover');
+          }}
+          onOpenOperations={() => setActiveTab('operations')}
+        />
+      </>
     );
   }
 
@@ -452,6 +509,14 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-[#FAF8F5] text-[#16222F] flex flex-col font-sans selection:bg-[#EAF3EF] selection:text-[#2D4D45]">
+      {/* Maintenance Mode Banner */}
+      {platformStatus.status === 'MAINTENANCE' && (
+        <MaintenanceBanner
+          statusRecord={platformStatus}
+          onOpenOperations={() => setActiveTab('operations')}
+        />
+      )}
+
       {/* Guest Mode Banner */}
       {!currentUser && guestExploring && (
         <div className="bg-[#152722] text-white px-4 py-2.5 text-xs flex flex-wrap items-center justify-between gap-3 border-b border-[#20362F] sticky top-0 z-50">
@@ -499,6 +564,7 @@ export function App() {
         setIsPublicMode={setIsPublicMode}
         onShareProfile={() => setIsShareOpen(true)}
         unreadMessagesCount={unreadMessagesCount}
+        onOpenOperations={() => setActiveTab('operations')}
       />
 
       {/* Main Content Area — Open interfaces ready for use */}

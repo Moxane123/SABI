@@ -16,11 +16,13 @@ import { UserProfile } from '../types';
 interface LandingPageViewProps {
   onLoginSuccess: (user: UserProfile, isNewSignup?: boolean) => void;
   onExploreGuest: () => void;
+  onOpenOperations?: () => void;
 }
 
 export const LandingPageView: React.FC<LandingPageViewProps> = ({
   onLoginSuccess,
   onExploreGuest,
+  onOpenOperations,
 }) => {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [inlineMode, setInlineMode] = useState<'none' | 'signup' | 'login'>('none');
@@ -443,6 +445,14 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
           <span className="hover:text-[#16222F] transition-colors cursor-pointer">
             Integrity Status
           </span>
+          {onOpenOperations && (
+            <button
+              onClick={onOpenOperations}
+              className="text-[#2D4D45] hover:text-[#16222F] font-semibold transition-colors cursor-pointer flex items-center gap-1"
+            >
+              <span>Operations Center</span>
+            </button>
+          )}
           <span className="text-[#99A8A4]">
             © {new Date().getFullYear()} SABI Technologies Inc.
           </span>

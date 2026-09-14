@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   Compass,
   MessageSquare,
+  Shield,
 } from 'lucide-react';
 import { UserProfile, ActiveTab } from '../types';
 import { SabiLogo } from './SabiLogo';
@@ -25,6 +26,7 @@ interface HeaderProps {
   setIsPublicMode: (isPublic: boolean) => void;
   onShareProfile: () => void;
   unreadMessagesCount?: number;
+  onOpenOperations?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -38,6 +40,7 @@ export const Header: React.FC<HeaderProps> = ({
   setIsPublicMode,
   onShareProfile,
   unreadMessagesCount = 0,
+  onOpenOperations,
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-[#FAF8F5]/90 backdrop-blur-md border-b border-[#EAE6DE] text-[#16222F]">
@@ -170,6 +173,17 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <Share2 className="w-4 h-4 text-[#4D7A70]" />
               </button>
+
+              {/* Operations Center Access */}
+              {onOpenOperations && (
+                <button
+                  onClick={onOpenOperations}
+                  title="Sabi Operations Center"
+                  className="p-2 rounded-xl bg-white border border-[#D5CEC2] hover:border-[#2D4D45] text-[#5A6872] hover:text-[#2D4D45] transition-colors cursor-pointer"
+                >
+                  <Shield className="w-4 h-4 text-[#2D4D45]" />
+                </button>
+              )}
 
               {/* Profile Avatar / Quick Details */}
               <div className="flex items-center gap-2 pl-1 border-l border-[#EAE6DE]">

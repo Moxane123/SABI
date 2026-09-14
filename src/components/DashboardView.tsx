@@ -129,8 +129,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   };
 
   return (
-    <div className="space-y-6 pb-24 md:pb-12 animate-in fade-in">
-      {/* 1. HERO WELCOME CARD (Exact mobile & desktop visual hierarchy from brand kit mockup) */}
+    <div className="pb-24 md:pb-12 animate-in fade-in">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* MAIN COLUMN (8 cols on lg+ screens) */}
+        <div className="lg:col-span-8 space-y-6">
+          {/* 1. HERO WELCOME CARD (Exact mobile & desktop visual hierarchy from brand kit mockup) */}
       <section className="bg-[#2D4D45] text-white rounded-3xl p-6 sm:p-7 shadow-lg shadow-[#2D4D45]/15 relative overflow-hidden">
         {/* Subtle decorative wave lines in background */}
         <svg
@@ -451,162 +454,226 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         )}
       </section>
 
-      {/* 4. MY PROOF SUMMARY & DOCUMENTED SKILLS (2-column layout on desktop) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* MY PROOF SUMMARY */}
-        <div className="bg-white p-5 sm:p-6 rounded-3xl border border-[#E7E2D8] shadow-2xs space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-[#EAF3EF] text-[#2D4D45] flex items-center justify-center">
-              <ShieldCheck className="w-4 h-4 text-[#4D7A70]" />
-            </div>
+          {/* 4. QUICK ACTIONS & PUBLIC PROFILE SHARE */}
+          <section className="bg-white rounded-3xl p-5 sm:p-6 border border-[#E7E2D8] shadow-2xs space-y-4">
             <h3 className="font-bold font-serif text-sm sm:text-base text-[#16222F]">
-              My Proof Summary
+              Quick Actions
             </h3>
-          </div>
 
-          <blockquote className="text-xs sm:text-sm text-[#2D4D45] font-semibold italic bg-[#FAF8F5] p-3 rounded-xl border border-[#EAE6DE]">
-            "Your work history grows every time you document real work."
-          </blockquote>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Action 1: Add Work */}
+              <button
+                onClick={onOpenAddWork}
+                className="p-4 rounded-2xl bg-[#EAF3EF] hover:bg-[#D8ECE2] border border-[#CFE2D9] text-left flex items-start gap-3 transition-all group cursor-pointer"
+              >
+                <div className="w-10 h-10 rounded-xl bg-[#4D7A70] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                  <Plus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-xs sm:text-sm text-[#2D4D45] group-hover:text-[#16222F] transition-colors">
+                    Add New Work Record
+                  </h4>
+                  <p className="text-[11px] text-[#5A6872] mt-0.5">
+                    Attach photos, project links, or client contact for confirmation.
+                  </p>
+                </div>
+              </button>
 
-          <p className="text-xs text-[#5A6872] leading-relaxed">
-            Unlike static CVs or corporate social networks filled with claims, SABI turns every finished dress, code repository, photo session, furniture build, or client repair into a portable, undeniable record backed by photos, files, and direct client verification.
-          </p>
-
-          <div className="pt-2 flex items-center justify-between border-t border-[#EAE6DE] text-xs">
-            <span className="text-[#7A8690]">Timeline history:</span>
-            <span className="font-bold text-[#16222F]">
-              {metrics.timelineSpanText || 'Starting now'}
-            </span>
-          </div>
+              {/* Action 2: View Public Profile */}
+              <button
+                onClick={() => setIsPublicMode(true)}
+                className="p-4 rounded-2xl bg-[#F3EFF9] hover:bg-[#E9E3F3] border border-[#DDD5EB] text-left flex items-start gap-3 transition-all group cursor-pointer"
+              >
+                <div className="w-10 h-10 rounded-xl bg-[#8C7CA7] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                  <ExternalLink className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-xs sm:text-sm text-[#61507C] group-hover:text-[#16222F] transition-colors">
+                    View Public Profile
+                  </h4>
+                  <p className="text-[11px] text-[#5A6872] mt-0.5">
+                    See exactly what prospective clients and collaborators see.
+                  </p>
+                </div>
+              </button>
+            </div>
+          </section>
         </div>
 
-        {/* DOCUMENTED SKILLS: Skills supported by actual work records */}
-        <div className="bg-white p-5 sm:p-6 rounded-3xl border border-[#E7E2D8] shadow-2xs space-y-3">
-          <div className="flex items-center justify-between">
+        {/* ========================================================================= */}
+        {/* DESKTOP SIDE RAIL (4 columns on lg+ screens; stacks cleanly on mobile)     */}
+        {/* ========================================================================= */}
+        <div className="lg:col-span-4 space-y-6">
+          {/* A. SABI TRUST LEDGER PROTOCOL */}
+          <section className="bg-white rounded-3xl p-5 border border-[#E7E2D8] shadow-2xs space-y-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-[#F3EFF9] text-[#8C7CA7] flex items-center justify-center">
-                <Award className="w-4 h-4 text-[#8C7CA7]" />
+              <div className="w-8 h-8 rounded-xl bg-[#2D4D45] text-white flex items-center justify-center">
+                <ShieldCheck className="w-4 h-4 text-[#CFE2D9]" />
               </div>
-              <h3 className="font-bold font-serif text-sm sm:text-base text-[#16222F]">
-                Documented Skills
+              <div>
+                <h3 className="font-bold font-serif text-sm text-[#16222F]">
+                  The SABI Trust Protocol
+                </h3>
+                <span className="text-[10px] uppercase tracking-wider font-semibold text-[#7A8690]">
+                  3-Tier Verification
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-2.5 text-xs">
+              <div className="p-2.5 rounded-xl bg-[#FAF8F5] border border-[#EAE6DE] space-y-1">
+                <div className="flex items-center gap-1.5 font-bold text-[#7A8690]">
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>1. Self-Documented</span>
+                </div>
+                <p className="text-[11px] text-[#5A6872] pl-5">
+                  You log the title, category, skills and dates of completed work.
+                </p>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-[#F3EFF9]/70 border border-[#DDD5EB] space-y-1">
+                <div className="flex items-center gap-1.5 font-bold text-[#61507C]">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#8C7CA7]" />
+                  <span>2. Evidence-Backed</span>
+                </div>
+                <p className="text-[11px] text-[#5A6872] pl-5">
+                  Photos, videos, files or repository links prove deliverables.
+                </p>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-[#EAF3EF] border border-[#CFE2D9] space-y-1">
+                <div className="flex items-center gap-1.5 font-bold text-[#2D4D45]">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#4D7A70]" strokeWidth={2.5} />
+                  <span>3. Client-Confirmed</span>
+                </div>
+                <p className="text-[11px] text-[#203D35] pl-5">
+                  An external client or supervisor independently authenticates your work.
+                </p>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-[#7A8690] leading-relaxed pt-1 border-t border-[#EAE6DE]">
+              SABI is not social media. There are no algorithms, follower counts, or likes. Only real, verified proof of what you can do.
+            </p>
+          </section>
+
+          {/* B. DOCUMENTED SKILLS */}
+          <section className="bg-white p-5 rounded-3xl border border-[#E7E2D8] shadow-2xs space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-[#F3EFF9] text-[#8C7CA7] flex items-center justify-center">
+                  <Award className="w-4 h-4 text-[#8C7CA7]" />
+                </div>
+                <h3 className="font-bold font-serif text-sm text-[#16222F]">
+                  Proven Skills
+                </h3>
+              </div>
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#EAF3EF] text-[#2D4D45]">
+                {provenSkills.length} Proven
+              </span>
+            </div>
+
+            <p className="text-xs text-[#5A6872]">
+              Skills verified through documented deliverables and client confirmations:
+            </p>
+
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {provenSkills.length > 0 ? (
+                provenSkills.map((sk) => (
+                  <div
+                    key={sk.name}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#EAF3EF] border border-[#CFE2D9] text-xs font-semibold text-[#2D4D45]"
+                  >
+                    <Check className="w-3 h-3 text-[#4D7A70]" strokeWidth={2.5} />
+                    <span>{sk.name}</span>
+                    <span className="text-[10px] px-1 rounded-md bg-[#CFE2D9]/70 text-[#203D35]">
+                      {sk.workRecordsCount}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-[#7A8690] italic py-1">
+                  Document work to attach evidence to your declared skills.
+                </p>
+              )}
+
+              {otherSkills.slice(0, 4).map((sk) => (
+                <span
+                  key={sk}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-[#FAF8F5] border border-[#E7E2D8] text-xs text-[#7A8690]"
+                  title="Declared in profile; add work to prove this skill"
+                >
+                  <span>{sk}</span>
+                  <span className="text-[10px] text-[#A8B2BA]">(needs proof)</span>
+                </span>
+              ))}
+            </div>
+
+            <div className="pt-2 border-t border-[#EAE6DE]">
+              <button
+                onClick={() => setActiveTab('profile')}
+                className="text-xs font-semibold text-[#4D7A70] hover:text-[#2D4D45] flex items-center gap-1 transition-colors cursor-pointer"
+              >
+                <span>Manage all profile skills</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </section>
+
+          {/* C. PORTABLE PROOF PROFILE WIDGET */}
+          <section className="bg-white rounded-3xl p-5 border border-[#E7E2D8] shadow-2xs space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-[#FAF8F5] text-[#16222F] flex items-center justify-center border border-[#EAE6DE]">
+                <Share2 className="w-4 h-4 text-[#4D7A70]" />
+              </div>
+              <h3 className="font-bold font-serif text-sm text-[#16222F]">
+                Your Proof Identity
               </h3>
             </div>
-            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#EAF3EF] text-[#2D4D45]">
-              {provenSkills.length} Proven
-            </span>
-          </div>
 
-          <p className="text-xs text-[#5A6872]">
-            Skills backed by actual work deliverables and client confirmations:
-          </p>
+            <p className="text-xs text-[#5A6872] leading-relaxed">
+              Share your public proof URL directly with prospective clients, employers, and collaborators.
+            </p>
 
-          <div className="flex flex-wrap gap-1.5 pt-1">
-            {provenSkills.length > 0 ? (
-              provenSkills.map((sk) => (
-                <div
-                  key={sk.name}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#EAF3EF] border border-[#CFE2D9] text-xs font-semibold text-[#2D4D45]"
+            <div className="p-3 rounded-xl bg-[#FAF8F5] border border-[#EAE6DE] space-y-2">
+              <div className="text-[11px] text-[#7A8690] font-medium">Public Web Link:</div>
+              <div className="flex items-center justify-between gap-2">
+                <code className="px-2 py-1 bg-white border border-[#E7E2D8] rounded-lg text-xs text-[#4D7A70] font-mono font-bold truncate">
+                  sabi.proof/{user?.username || 'your-handle'}
+                </code>
+                <button
+                  onClick={onShareProfile}
+                  className="px-2.5 py-1 bg-[#16222F] hover:bg-stone-800 text-white text-xs font-semibold rounded-lg shrink-0 transition-colors cursor-pointer"
                 >
-                  <Check className="w-3 h-3 text-[#4D7A70]" strokeWidth={2.5} />
-                  <span>{sk.name}</span>
-                  <span className="text-[10px] px-1 rounded-md bg-[#CFE2D9]/70 text-[#203D35]">
-                    {sk.workRecordsCount} {sk.workRecordsCount === 1 ? 'job' : 'jobs'}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <p className="text-xs text-[#7A8690] italic py-1">
-                Document work to attach evidence to your declared skills.
-              </p>
-            )}
+                  Share
+                </button>
+              </div>
+            </div>
 
-            {/* Declared but unproven skills shown with subtle style */}
-            {otherSkills.slice(0, 4).map((sk) => (
-              <span
-                key={sk}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-[#FAF8F5] border border-[#E7E2D8] text-xs text-[#7A8690]"
-                title="Declared in profile; add work to prove this skill"
-              >
-                <span>{sk}</span>
-                <span className="text-[10px] text-[#A8B2BA]">(needs proof)</span>
-              </span>
-            ))}
-          </div>
-
-          <div className="pt-2 border-t border-[#EAE6DE]">
             <button
-              onClick={() => setActiveTab('profile')}
-              className="text-xs font-semibold text-[#4D7A70] hover:text-[#2D4D45] flex items-center gap-1 transition-colors"
+              onClick={() => setIsPublicMode(true)}
+              className="w-full py-2 px-3 text-center text-xs font-semibold text-[#2D4D45] bg-[#EAF3EF] hover:bg-[#D5E8DF] rounded-xl transition-colors cursor-pointer block"
             >
-              <span>Manage all profile skills</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              Preview Public Page →
             </button>
-          </div>
+          </section>
+
+          {/* D. MY PROOF SUMMARY */}
+          <section className="bg-white p-5 rounded-3xl border border-[#E7E2D8] shadow-2xs space-y-3">
+            <blockquote className="text-xs text-[#2D4D45] font-semibold italic bg-[#FAF8F5] p-3 rounded-xl border border-[#EAE6DE]">
+              "Your work history grows every time you document real work."
+            </blockquote>
+
+            <div className="flex items-center justify-between text-xs text-[#7A8690]">
+              <span>Timeline span:</span>
+              <span className="font-bold text-[#16222F]">
+                {metrics.timelineSpanText || 'Starting now'}
+              </span>
+            </div>
+          </section>
         </div>
+
       </div>
-
-      {/* 5. QUICK ACTIONS & PUBLIC PROFILE SHARE */}
-      <section className="bg-white rounded-3xl p-5 sm:p-6 border border-[#E7E2D8] shadow-2xs space-y-4">
-        <h3 className="font-bold font-serif text-sm sm:text-base text-[#16222F]">
-          Quick Actions
-        </h3>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {/* Action 1: Add Work */}
-          <button
-            onClick={onOpenAddWork}
-            className="p-4 rounded-2xl bg-[#EAF3EF] hover:bg-[#D8ECE2] border border-[#CFE2D9] text-left flex items-start gap-3 transition-all group"
-          >
-            <div className="w-10 h-10 rounded-xl bg-[#4D7A70] text-white flex items-center justify-center shrink-0 shadow-2xs">
-              <Plus className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="font-bold text-xs sm:text-sm text-[#2D4D45] group-hover:text-[#16222F] transition-colors">
-                Add New Work Record
-              </h4>
-              <p className="text-[11px] text-[#5A6872] mt-0.5">
-                Attach photos, project links, or client contact for confirmation.
-              </p>
-            </div>
-          </button>
-
-          {/* Action 2: View Public Profile */}
-          <button
-            onClick={() => setIsPublicMode(true)}
-            className="p-4 rounded-2xl bg-[#F3EFF9] hover:bg-[#E9E3F3] border border-[#DDD5EB] text-left flex items-start gap-3 transition-all group"
-          >
-            <div className="w-10 h-10 rounded-xl bg-[#8C7CA7] text-white flex items-center justify-center shrink-0 shadow-2xs">
-              <ExternalLink className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="font-bold text-xs sm:text-sm text-[#61507C] group-hover:text-[#16222F] transition-colors">
-                View Public Profile
-              </h4>
-              <p className="text-[11px] text-[#5A6872] mt-0.5">
-                See exactly what prospective clients and collaborators see.
-              </p>
-            </div>
-          </button>
-        </div>
-
-        {/* Portable Share Bar */}
-        <div className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-[#EAE6DE] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-[#16222F]">Your Proof URL:</span>
-            <code className="px-2 py-0.5 bg-white border border-[#E7E2D8] rounded-md text-[11px] text-[#4D7A70] font-mono font-bold">
-              sabi.proof/{user?.username || 'your-handle'}
-            </code>
-          </div>
-
-          <button
-            onClick={onShareProfile}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#D5CEC2] hover:border-[#4D7A70] text-[#16222F] font-semibold text-xs transition-colors"
-          >
-            <Share2 className="w-3.5 h-3.5 text-[#4D7A70]" />
-            <span>Share or QR Code</span>
-          </button>
-        </div>
-      </section>
     </div>
   );
 };

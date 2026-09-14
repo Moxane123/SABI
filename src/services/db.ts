@@ -9,7 +9,10 @@ import {
   Conversation,
   Message,
   ReportRecord,
+  PlatformStatusRecord,
+  PlatformStatus,
 } from '../types';
+import { operationsService } from './operationsService';
 import {
   SEED_DISCOVER_USERS,
   SEED_DISCOVER_WORK_RECORDS,
@@ -657,8 +660,10 @@ export const db = {
   getDiscoverableProfessionals(): DiscoverProfessional[] {
     initDiscoverSeed();
     const allUsers = this.getUsers();
-    // Only profiles that have explicitly opted in to appear in Discover
-    const eligibleUsers = allUsers.filter((u) => u.appearInDiscover === true);
+    // Only active profiles that have explicitly opted in to appear in Discover
+    const eligibleUsers = allUsers.filter(
+      (u) => u.appearInDiscover === true && !u.isSuspended
+    );
 
     const allRecords = this.getAllWorkRecords();
     const allEvidence = this.getAllEvidence();
@@ -667,11 +672,11 @@ export const db = {
     const results: DiscoverProfessional[] = [];
 
     for (const user of eligibleUsers) {
-      // STRICT PRIVACY ENFORCEMENT:
-      // Only display information that is already marked public.
+      // STRICT PRIVACY & MODERATION ENFORCEMENT:
+      // Only display information that is already marked public and not taken down.
       // Private work records must NEVER be exposed through Discover.
       const userPublicRecords = allRecords.filter(
-        (r) => r.userId === user.id && r.visibility === 'public'
+        (r) => r.userId === user.id && r.visibility === 'public' && !r.isTakenDown
       );
 
       const evidenceBackedRecords = userPublicRecords.filter((rec) => {
@@ -1170,10 +1175,168 @@ export const db = {
       reason: (reason || 'Inappropriate behavior').trim(),
       details: (details || '').trim(),
       createdAt: new Date().toISOString(),
+      status: 'pending',
     };
     reports.push(newReport);
     setStorage(STORAGE_KEYS.REPORTS, reports);
+
+    operationsService.logAuditEvent({
+      action: 'USER_REPORT_SUBMITTED',
+      category: 'reports',
+      actorEmail: reporterId,
+      actorName: 'User',
+      actorId: reporterId,
+      targetType: 'USER',
+      targetId: reportedUserId,
+      details: `User report filed against ${reportedUserId}: "${newReport.reason}"`,
+    });
+
     return newReport;
+  },
+
+  getAllReports(): ReportRecord[] {
+    return getStorage<ReportRecord[]>(STORAGE_KEYS.REPORTS, []);
+  },
+
+  updateReport(
+    reportId: string,
+    updates: Partial<Pick<ReportRecord, 'status' | 'resolutionNotes' | 'actionTaken'>>,
+    actor: { id: string; email: string; name: string }
+  ): boolean {
+    const reports = this.getAllReports();
+    const idx = reports.findIndex((r) => r.id === reportId);
+    if (idx === -1) return false;
+
+    reports[idx] = {
+      ...reports[idx],
+      ...updates,
+      resolvedBy: actor.email,
+      resolvedAt: new Date().toISOString(),
+    };
+    setStorage(STORAGE_KEYS.REPORTS, reports);
+
+    operationsService.logAuditEvent({
+      action: 'REPORT_RESOLVED',
+      category: 'reports',
+      actorEmail: actor.email,
+      actorName: actor.name,
+      actorId: actor.id,
+      targetType: 'REPORT',
+      targetId: reportId,
+      details: `Report ${reportId} marked as ${updates.status || 'resolved'}. Action: ${updates.actionTaken || 'none'}. Notes: ${updates.resolutionNotes || 'None'}`,
+    });
+
+    return true;
+  },
+
+  suspendUser(
+    userId: string,
+    reason: string,
+    actor: { id: string; email: string; name: string }
+  ): boolean {
+    const users = this.getUsers();
+    const user = users.find((u) => u.id === userId);
+    if (!user) return false;
+
+    user.isSuspended = true;
+    user.suspendedReason = reason.trim();
+    user.suspendedAt = new Date().toISOString();
+    this.updateUser(user);
+
+    operationsService.logAuditEvent({
+      action: 'USER_SUSPEND',
+      category: 'moderation',
+      actorEmail: actor.email,
+      actorName: actor.name,
+      actorId: actor.id,
+      targetType: 'USER',
+      targetId: userId,
+      details: `Suspended user ${user.fullName} (${user.email || user.username}). Reason: ${reason}`,
+    });
+
+    return true;
+  },
+
+  unsuspendUser(
+    userId: string,
+    actor: { id: string; email: string; name: string }
+  ): boolean {
+    const users = this.getUsers();
+    const user = users.find((u) => u.id === userId);
+    if (!user) return false;
+
+    user.isSuspended = false;
+    user.suspendedReason = undefined;
+    user.suspendedAt = undefined;
+    this.updateUser(user);
+
+    operationsService.logAuditEvent({
+      action: 'USER_UNSUSPEND',
+      category: 'moderation',
+      actorEmail: actor.email,
+      actorName: actor.name,
+      actorId: actor.id,
+      targetType: 'USER',
+      targetId: userId,
+      details: `Unsuspended user ${user.fullName} (${user.email || user.username}). User restored to active status.`,
+    });
+
+    return true;
+  },
+
+  takeDownWorkRecord(
+    workId: string,
+    reason: string,
+    actor: { id: string; email: string; name: string }
+  ): boolean {
+    const record = this.getWorkRecordById(workId);
+    if (!record) return false;
+
+    record.isTakenDown = true;
+    record.takeDownReason = reason.trim();
+    record.moderatedAt = new Date().toISOString();
+    record.moderatedBy = actor.email;
+    this.updateWorkRecord(record);
+
+    operationsService.logAuditEvent({
+      action: 'WORK_RECORD_TAKEDOWN',
+      category: 'moderation',
+      actorEmail: actor.email,
+      actorName: actor.name,
+      actorId: actor.id,
+      targetType: 'WORK_RECORD',
+      targetId: workId,
+      details: `Took down work record "${record.title}". Reason: ${reason}`,
+    });
+
+    return true;
+  },
+
+  restoreWorkRecord(
+    workId: string,
+    actor: { id: string; email: string; name: string }
+  ): boolean {
+    const record = this.getWorkRecordById(workId);
+    if (!record) return false;
+
+    record.isTakenDown = false;
+    record.takeDownReason = undefined;
+    record.moderatedAt = new Date().toISOString();
+    record.moderatedBy = actor.email;
+    this.updateWorkRecord(record);
+
+    operationsService.logAuditEvent({
+      action: 'WORK_RECORD_RESTORE',
+      category: 'moderation',
+      actorEmail: actor.email,
+      actorName: actor.name,
+      actorId: actor.id,
+      targetType: 'WORK_RECORD',
+      targetId: workId,
+      details: `Restored taken-down work record "${record.title}" to active listing.`,
+    });
+
+    return true;
   },
 
   clearAllData(): void {

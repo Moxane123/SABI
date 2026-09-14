@@ -18,6 +18,11 @@ export interface UserProfile {
   phone?: string;
   onboardingCompleted?: boolean;
   appearInDiscover?: boolean; // Profile privacy setting: Opt-in to appear in Discover
+  isSuspended?: boolean;
+  suspendedReason?: string;
+  suspendedAt?: string;
+  isFlagged?: boolean;
+  adminRole?: AdminRole;
 }
 
 export interface EvidenceItem {
@@ -112,6 +117,11 @@ export interface WorkRecord {
   confirmationStatus: ConfirmationStatus;
   evidenceList?: EvidenceItem[];
   confirmation?: ClientConfirmation;
+  isTakenDown?: boolean;
+  takeDownReason?: string;
+  moderatedAt?: string;
+  moderatedBy?: string;
+  isFlagged?: boolean;
 }
 
 export interface SkillProofMetric {
@@ -133,7 +143,15 @@ export interface ProfileMetrics {
   proofRatio: number; // percentage 0-100 of records with proof or confirmation
 }
 
-export type ActiveTab = 'dashboard' | 'my-work' | 'discover' | 'messages' | 'add-work' | 'profile' | 'public-preview';
+export type ActiveTab =
+  | 'dashboard'
+  | 'my-work'
+  | 'discover'
+  | 'messages'
+  | 'add-work'
+  | 'profile'
+  | 'public-preview'
+  | 'operations';
 
 export interface DemonstratedSkillInfo {
   name: string;
@@ -189,4 +207,149 @@ export interface ReportRecord {
   reason: string;
   details: string;
   createdAt: string;
+  status?: 'pending' | 'under_review' | 'resolved' | 'dismissed';
+  resolutionNotes?: string;
+  resolvedBy?: string;
+  resolvedAt?: string;
+  actionTaken?: 'none' | 'user_warned' | 'user_suspended' | 'work_taken_down';
 }
+
+// ============================================================================
+// SABI OPERATIONS CENTER TYPES
+// ============================================================================
+
+export type PlatformStatus = 'OPERATIONAL' | 'SUSPENDED' | 'MAINTENANCE';
+
+export interface PlatformStatusRecord {
+  status: PlatformStatus;
+  previousStatus: PlatformStatus;
+  reason: string;
+  changedBy: string;
+  changedByEmail: string;
+  changedById: string;
+  changedAt: string;
+  publicNotice?: string;
+  estimatedResolution?: string;
+}
+
+export interface PlatformStatusHistoryEntry {
+  id: string;
+  fromStatus: PlatformStatus;
+  toStatus: PlatformStatus;
+  reason: string;
+  changedBy: string;
+  changedByEmail: string;
+  changedById: string;
+  changedAt: string;
+  publicNotice?: string;
+}
+
+export type AdminRole = 'super_admin' | 'platform_admin' | 'moderator' | 'support';
+
+export interface AdminUser {
+  id: string;
+  userId?: string;
+  email: string;
+  fullName: string;
+  role: AdminRole;
+  active: boolean;
+  addedAt: string;
+  addedBy: string;
+  lastActiveAt?: string;
+  notes?: string;
+}
+
+export type AuditLogCategory =
+  | 'platform'
+  | 'users'
+  | 'moderation'
+  | 'reports'
+  | 'content'
+  | 'support'
+  | 'notifications'
+  | 'settings'
+  | 'roles'
+  | 'security';
+
+export interface AuditLogEntry {
+  id: string;
+  action: string;
+  category: AuditLogCategory;
+  actorEmail: string;
+  actorName: string;
+  actorId: string;
+  targetType?: string;
+  targetId?: string;
+  details: string;
+  previousValue?: string;
+  newValue?: string;
+  timestamp: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface SupportTicketMessage {
+  id: string;
+  senderName: string;
+  senderEmail: string;
+  isStaff: boolean;
+  content: string;
+  timestamp: string;
+}
+
+export interface SupportTicket {
+  id: string;
+  ticketNumber: string;
+  userId?: string;
+  userEmail: string;
+  userName: string;
+  subject: string;
+  category: 'verification' | 'account' | 'confirmation_issue' | 'bug' | 'dispute' | 'general';
+  status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  createdAt: string;
+  updatedAt: string;
+  assignedTo?: string;
+  messages: SupportTicketMessage[];
+}
+
+export interface OperationsNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'operational' | 'maintenance' | 'advisory' | 'update';
+  active: boolean;
+  broadcastToAll: boolean;
+  createdAt: string;
+  createdBy: string;
+  expiresAt?: string;
+}
+
+export interface PlatformSettings {
+  allowRegistrations: boolean;
+  allowNewWorkSubmissions: boolean;
+  allowClientConfirmations: boolean;
+  requireEmailVerification: boolean;
+  maxEvidenceUploadMB: number;
+  maxEvidencePerRecord: number;
+  publicDiscoveryEnabled: boolean;
+  messagingEnabled: boolean;
+  maintenanceNotice: string;
+  suspensionNotice: string;
+  updatedAt: string;
+  updatedBy: string;
+}
+
+export type OperationsSection =
+  | 'overview'
+  | 'users'
+  | 'moderation'
+  | 'reports'
+  | 'content'
+  | 'support'
+  | 'notifications'
+  | 'settings'
+  | 'roles'
+  | 'audit-logs'
+  | 'analytics'
+  | 'system-health';
+

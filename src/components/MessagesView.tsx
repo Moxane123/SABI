@@ -62,7 +62,6 @@ export const MessagesView: React.FC<MessagesViewProps> = ({
       setConversations([]);
       return;
     }
-    db.ensureStarterConversation(currentUser.id);
     const convs = db.getConversationsForUser(currentUser.id);
     setConversations(convs);
 
